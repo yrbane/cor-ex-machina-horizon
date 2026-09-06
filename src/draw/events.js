@@ -286,7 +286,7 @@ const DRAW = {
 
   rocket(ctx, e, c) {
     const s = c.H * .02 * e.size, { x, y, tn } = c, ang = Math.atan2(e.tilt, -1) + Math.PI / 2;
-    for (const p of e.smoke) { if (p.a <= 0) continue; ctx.fillStyle = `rgba(210,210,220,${p.a * .35})`; ctx.beginPath(); ctx.arc(p.x * c.W, p.y * c.horizon + s * 1.8, s * (.4 + (1 - p.a) * 1.6), 0, TAU); ctx.fill(); } // fumée
+    for (const p of e.smoke) { if (p.a <= 0) continue; ctx.fillStyle = `rgba(210,210,220,${p.a * p.a * .16})`; ctx.beginPath(); ctx.arc(p.x * c.W, p.y * c.horizon + s * 1.8, s * (.3 + (1 - p.a) * .9), 0, TAU); ctx.fill(); } // fumée, légère et qui se dissipe
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     const fl = .7 + .3 * Math.sin(tn * 40); ctx.fillStyle = 'rgba(255,190,60,.9)'; poly(ctx, [[-s * .3, s * 1.2], [s * .3, s * 1.2], [0, s * (1.2 + 1.8 * fl)]]); ctx.fillStyle = 'rgba(255,240,200,.95)'; poly(ctx, [[-s * .15, s * 1.2], [s * .15, s * 1.2], [0, s * (1.2 + .9 * fl)]]); // flamme
     ctx.fillStyle = '#f2f2f5'; ctx.fillRect(-s * .35, -s * .9, s * .7, s * 2.1);                                                        // corps

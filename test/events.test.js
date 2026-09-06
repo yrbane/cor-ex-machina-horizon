@@ -73,7 +73,7 @@ test('tickEvents fait apparaître des passages avec un taux, jamais de nuit seul
 
 test('la comète, les étoiles filantes et les satellites passent derrière les nuages, pas les oiseaux ni les avions', () => {
   for (const k of ['comet', 'shooting', 'satellite']) assert.ok(BEHIND_CLOUDS.includes(k), k);
-  for (const k of ['bird', 'airliner', 'ufo', 'balloon']) assert.ok(!BEHIND_CLOUDS.includes(k), k);
+  for (const k of ['bird', 'airliner', 'ufo', 'balloon', 'fireworks']) assert.ok(!BEHIND_CLOUDS.includes(k), k);
   for (const k of BEHIND_CLOUDS) assert.ok(TYPES[k], k);
 });
 

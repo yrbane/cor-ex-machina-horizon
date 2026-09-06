@@ -33,7 +33,7 @@ export const TYPES = {
   submarine:   { rate: 1 / 800, label: 'périscopes', single: true },
 };
 export const WATER_TYPES = ['sailboat', 'ship', 'fish', 'whale', 'ducks', 'dolphins', 'serpent', 'submarine'];
-export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite', 'fireworks']; // ciel profond : dessinés avant les nuages
+export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
 export const TRANSIENT = ['shooting', 'fish', 'whale', 'fireworks', 'dolphins'];
 
 // Espèces d'oiseaux : taille, cadence de battement, vitesse, ondulation, vol plané

@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.2.1 — 2026-09-06 · « Feux »
+
+- Les feux d'artifice éclatent devant les nuages, pas derrière.
+- Fumée de la fusée plus légère, qui se dissipe au lieu de s'accumuler en bloc.
+
 ## 1.2.0 — 2026-09-06 · « Foule »
 
 - Timecode discret en bas à gauche : position et durée, en petit, avec un halo, masqué quand la console est ouverte.
