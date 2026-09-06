@@ -64,9 +64,13 @@ const DRAW = {
       for (let i = 0; i <= 10; i++) ctx.lineTo(bx0 - d * len * i / 10, y - s * .55 + wave(i));
       for (let i = 10; i >= 0; i--) ctx.lineTo(bx0 - d * len * i / 10, y + s * .55 + wave(i));
       ctx.closePath(); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
-      ctx.save(); ctx.translate(bx0 - d * len / 2, y + wave(5)); ctx.rotate(Math.sin(tn * 5 + 4.5) * .05);
+      // Chaque lettre suit l'onde : posée à sa hauteur locale, inclinée selon la pente, dans l'ordre de lecture à l'écran
+      const text = e.bannerText || 'EMT', left = Math.min(bx0, bx0 - d * len), waveAtX = px => wave((bx0 - px) * d / len * 10);
       ctx.fillStyle = '#1b2a4a'; ctx.font = `bold ${Math.round(s * .95)}px "Avenir Next", "Helvetica Neue", Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(e.bannerText || 'EMT', 0, 0); ctx.restore();
+      for (let j = 0; j < text.length; j++) {
+        const px = left + len * ((j + .5) / text.length * .6 + .2), slope = (waveAtX(px + 2) - waveAtX(px - 2)) / 4;
+        ctx.save(); ctx.translate(px, y + waveAtX(px)); ctx.rotate(Math.atan(slope)); ctx.fillText(text[j], 0, 0); ctx.restore();
+      }
     }
     ctx.fillStyle = k.shade; ctx.beginPath(); ctx.ellipse(x - s * .2 * d, y + s * .95, s * .18, s * .18, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(x + s * .9 * d, y + s * .95, s * .18, s * .18, 0, 0, TAU); ctx.fill(); // roues
     ctx.strokeStyle = k.shade; ctx.lineWidth = Math.max(1, s * .1); ctx.beginPath(); ctx.moveTo(x - s * .2 * d, y + s * .8); ctx.lineTo(x - s * .1 * d, y + s * .3); ctx.moveTo(x + s * .9 * d, y + s * .8); ctx.lineTo(x + s * .7 * d, y + s * .3); ctx.stroke();

@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 1.0.4 — 2026-09-06 · « Banderole »
+
+- Le texte « EMT » suit l'ondulation de la banderole : chaque lettre est posée à sa hauteur locale et inclinée selon la pente, dans l'ordre de lecture quel que soit le sens de vol.
+
 ## 1.0.3 — 2026-09-06 · « Halo »
 
 - Le halo de la lune suit le croissant : il s'efface progressivement côté ombre au lieu de dessiner un trou rond dans la lueur.

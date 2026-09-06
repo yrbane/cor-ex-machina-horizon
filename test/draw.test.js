@@ -26,7 +26,11 @@ test('la banderole affiche EMT en texte, lisible quel que soit le sens', () => {
   const e = spawn('prop', rng, 0); e.banner = true; e.bannerText = 'EMT'; e.x = .5; e.y = .3;
   for (const dir of [1, -1]) {
     e.dir = dir; const ctx = fakeCtx(); drawEvent(ctx, e, scene, day);
-    assert.ok(ctx.texts().includes('EMT'), `texte EMT dessiné (sens ${dir})`);
+    const letters = ctx.texts();
+    assert.deepEqual(letters, ['E', 'M', 'T'], `lettres dans l'ordre de lecture (sens ${dir})`);
+    const rot = ctx.calls.filter(c => c[0] === 'rotate').slice(-3).map(c => c[1]);
+    assert.equal(rot.length, 3, 'chaque lettre est inclinée selon la pente de la banderole');
+    assert.ok(new Set(rot.map(v => v.toFixed(4))).size > 1, 'les inclinaisons diffèrent d’une lettre à l’autre : le texte suit l’onde');
   }
 });
 
