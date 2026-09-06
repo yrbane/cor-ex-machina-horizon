@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 1.9.2 — 2026-09-06 · « Pas de foudre sous l'eau »
+
+- Au fond des océans, l'orage ne fait plus tomber la foudre dans l'eau ; il n'assombrit que la lumière.
+
 ## 1.9.1 — 2026-09-06 · « Plus de poissons »
 
 - Les poissons sont plus gros et plus nombreux : jusqu'à vingt à la fois, et ils arrivent plus vite.

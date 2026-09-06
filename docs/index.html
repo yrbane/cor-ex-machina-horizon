@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="cor-ex-machina-horizon 1.9.1">
+<meta name="generator" content="cor-ex-machina-horizon 1.9.2">
 <title>Cor ex machina, horizon</title>
 <style>
   :root { --ink: #eae7dd; --ink-2: #a9aec0; --ink-3: #6b7188; --line: rgba(255,255,255,.12); --series: #5aa0f0; --sub: #d95926; --bass: #199e70; --mid: #c98500; --high: #d55181; }
@@ -126,7 +126,7 @@
 <aside id="console" hidden>
   <button class="close" id="closeBtn">Fermer (Échap)</button>
   <header>
-    <h1>Cor ex machina, horizon <small>version 1.9.1</small></h1>
+    <h1>Cor ex machina, horizon <small>version 1.9.2</small></h1>
     <p id="stateLine"></p>
   </header>
   <nav class="tabs" role="tablist">
@@ -3397,6 +3397,7 @@ let hue = 0, hueTarget = 0, kickFlash = 0, jumpFlash = 0, lastT = now(), started
 const disp = { sub: 0, bass: 0, mid: 0, high: 0 };
 const follow = (c, tgt, up, down) => c + (tgt - c) * (tgt > c ? up : down);
 const waves = [], events = [], lightning = new Lightning();
+const hasSky = () => sceneById(sceneId).cats.includes('sky');   // pas de foudre au fond des océans
 let curW = { w: 'clear', k: 0, dark: 0, rainbow: 0 };
 let layers = makeLayers(A.S, A.step), layersN = A.S.length;
 const stars = Array.from({ length: 110 }, () => ({ x: rng(), y: rng() * .6, s: .5 + rng() * rng() * 2.2, p: rng() * TAU, col: rng() < .12 ? '190,210,255' : rng() < .2 ? '255,225,190' : '234,231,221' }));
@@ -3406,7 +3407,7 @@ const cloudSprites = new CloudSprites((w, h) => { const cv2 = document.createEle
 let mouseX = .5, mouseY = .5;
 const geo = { horizon: 0, wTop: 0, parX: 0, layerGeom: null };
 addEventListener('mousemove', e => { mouseX = e.clientX / innerWidth; mouseY = e.clientY / innerHeight; idleT = now(); }, { passive: true });
-function onKick(k, horizon) { stats.kicks++; kickFlash = Math.max(kickFlash, k); hueTarget += 15 + 30 * k * (rng() < .5 ? 1 : -1); waves.push({ r: 0, a: .7 * k }); if (curW.w === 'storm' && curW.k > .3 && k > .4 && now() - lightning.t > 1.5) lightning.strike(W, horizon, rng, now()); }
+function onKick(k, horizon) { stats.kicks++; kickFlash = Math.max(kickFlash, k); hueTarget += 15 + 30 * k * (rng() < .5 ? 1 : -1); waves.push({ r: 0, a: .7 * k }); if (curW.w === 'storm' && curW.k > .3 && k > .4 && now() - lightning.t > 1.5 && hasSky()) lightning.strike(W, horizon, rng, now()); }
 
 // --- scènes : même moteur, compositions différentes ; changement à la main ou à chaque nouveau morceau
 let sceneId = sceneById(store.get('horizon.scene', 'horizon')).id, autoScene = store.get('horizon.autoScene', true);
@@ -3440,7 +3441,7 @@ function frame() {
   const S = { W, H, t, tn, dt, sky, wx, disp, lvl, hue, lead, hb: (158 + hue) % 360, hs: (18 + hue) % 360, layers, events, parX, parY, wind, kickFlash, waves, stars, streaks, clouds, cloudSprites, rng, makeLayer, reduced: REDUCED };
   if (kick) onKick(kick, geo.horizon || H * .7);
   if (playing) { const before = events.length; tickEvents(events, dt, sky, wind, wx, rng, tn, allowedTypes(sceneId)); for (const e of events.slice(before)) stats.spawned[e.type] = (stats.spawned[e.type] || 0) + 1; }
-  if (wx.w === 'storm' && wx.k > .3 && playing && rng() < dt / 7) lightning.strike(W, geo.horizon || H * .7, rng, tn);
+  if (wx.w === 'storm' && wx.k > .3 && playing && hasSky() && rng() < dt / 7) lightning.strike(W, geo.horizon || H * .7, rng, tn);
 
   const R = (RENDER[sceneId] || renderHorizon)(ctx, S, D);
   geo.horizon = R.horizon; geo.wTop = R.wTop; geo.parX = parX; geo.layerGeom = R.layerGeom;
