@@ -35,6 +35,7 @@ export const TYPES = {
 export const WATER_TYPES = ['sailboat', 'ship', 'fish', 'whale', 'ducks', 'dolphins', 'serpent', 'submarine'];
 export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
 export const TRANSIENT = ['shooting', 'fish', 'whale', 'fireworks', 'dolphins'];
+export const MAX_EVENTS = 3;   // passages simultanés au plus
 
 // Espèces d'oiseaux : taille, cadence de battement, vitesse, ondulation, vol plané
 export const SPECIES = [
@@ -54,7 +55,8 @@ export function canSpawn(type, sky, weather, events) {
   if (T.night && night < .5) return false;
   if (T.day && sky.day < .5) return false;
   if (T.light && (weather.w === 'rain' || weather.w === 'storm')) return false;
-  if (T.single && events.some(e => e.type === type)) return false;
+  if (events.length >= MAX_EVENTS) return false;
+  if (events.some(e => e.type === type)) return false;   // jamais deux passages du même type en même temps
   return true;
 }
 // Taux effectif : la nuit noire favorise le nocturne, le jour franc le diurne, les ovnis préfèrent la nuit

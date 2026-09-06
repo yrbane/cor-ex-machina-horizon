@@ -79,6 +79,41 @@
     background: rgba(10,12,22,.55); backdrop-filter: blur(12px); border: 1px solid var(--line); color: var(--ink); transition: opacity .35s, transform .35s; white-space: nowrap; max-width: 80vw; overflow: hidden; text-overflow: ellipsis; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
   #toast .ico { margin-right: .5em; }
+  /* Barre de contrôles (potard), sur c */
+  #controls { position: fixed; left: 50%; bottom: 2.5vh; transform: translateX(-50%); z-index: 12; display: flex; align-items: center; gap: 1.2rem; padding: .7rem 1.1rem; border-radius: 18px; cursor: default;
+    background: rgba(10,12,22,.55); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border: 1px solid var(--line); box-shadow: 0 16px 50px rgba(0,0,0,.45); max-width: 96vw; flex-wrap: wrap; justify-content: center; }
+  #controls[hidden] { display: none; }
+  .ctl-group { display: flex; align-items: center; gap: .5rem; }
+  .ctl-position { flex: 1; min-width: 18rem; }
+  .ctl-position pt-slider { flex: 1; min-width: 10rem; }
+  .ctl-time { font-size: .8rem; color: var(--ink-2); min-width: 4.6em; text-align: center; }
+  .ctl-led { display: inline-flex; flex-direction: column; align-items: center; gap: .15rem; color: var(--ink-3); font-size: .7rem; }
+  #controls { --ctl-accent: #5aa0f0; --ctl-track: rgba(255,255,255,.18); color: var(--ink); }
+  #controls pt-button { font: inherit; }
+  #controls pt-knob { width: 52px; height: 66px; }
+  #controls pt-crossfader { width: min(340px, 40vw); height: 44px; }
+  #controls pt-vumeter { width: 150px; height: 10px; }
+  .ctl-position { flex: 0 1 auto; min-width: 0; }
+  .ctl-position pt-crossfader { flex: none; }
+  /* Console : entête, onglets, tuiles */
+  #console header { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: .6rem; }
+  #console header p { margin: 0; flex: 1; min-width: 12rem; }
+  .tabs { display: flex; gap: .3rem; flex-wrap: wrap; margin: .2rem 0 1rem; }
+  .tabs button { font: inherit; font-size: .9rem; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: .3em 1em; cursor: pointer; transition: all .15s; }
+  .tabs button:hover { color: var(--ink); border-color: var(--ink-2); }
+  .tabs button[aria-selected="true"] { color: #06070c; background: var(--ink); border-color: var(--ink); }
+  #console section[data-tab] { display: none; }
+  #console section[data-tab].active { display: block; }
+  #console section .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem 2rem; }
+  .stat { border-top: 1px solid var(--line); padding: .5rem .2rem .2rem; border-left: 2px solid transparent; }
+  .stat:nth-child(4n+1) { border-left-color: var(--sub); } .stat:nth-child(4n+2) { border-left-color: var(--bass); } .stat:nth-child(4n+3) { border-left-color: var(--mid); } .stat:nth-child(4n+4) { border-left-color: var(--high); }
+  .stat { padding-left: .6rem; }
+  .keys { display: grid; grid-template-columns: max-content 1fr; gap: .45rem 1rem; align-items: baseline; margin: .4rem 0 0; }
+  .keys dt { margin: 0; white-space: nowrap; } .keys dd { margin: 0; color: var(--ink-2); font-size: .9rem; }
+  #console kbd { display: inline-block; min-width: 1.6em; text-align: center; padding: .05em .45em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: .85em; }
+  .lead { color: var(--ink-2); font-size: .95rem; line-height: 1.5; max-width: 70ch; }
+  #console h2 { display: flex; align-items: center; gap: .5rem; }
+  #console h2 small { font-weight: 400; color: var(--ink-3); font-size: .8rem; }
   .close { position: absolute; top: .9rem; right: 1.1rem; color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: .2em .8em; background: transparent; font: inherit; cursor: pointer; }
 </style>
 </head>
@@ -88,50 +123,79 @@
 <audio id="audio" preload="auto" src="__AUDIO__"></audio>
 <aside id="console" hidden>
   <button class="close" id="closeBtn">Fermer (Échap)</button>
-  <h1>Cor ex machina, horizon <small>version __VERSION__</small></h1>
-  <p id="stateLine"></p>
-  <div class="grid">
-    <section>
-      <h2>Commandes</h2>
-      <ul>
-        <li><kbd>clic</kbd> dans l'eau : lecture ou pause. <kbd>clic</kbd> sur le paysage ou le ciel : saute au temps visé, à l'échelle du plan touché.</li>
-        <li><kbd>molette</kbd> : avance ou recule. Avec <kbd>Maj</kbd>, dix fois plus vite.</li>
-        <li><kbd>←</kbd> <kbd>→</kbd> : 10 s. Avec <kbd>Maj</kbd> : 1 min. <kbd>Page ↑</kbd> <kbd>Page ↓</kbd> : 5 min. <kbd>Début</kbd> <kbd>Fin</kbd>.</li>
-        <li><kbd>espace</kbd> : lecture ou pause. <kbd>f</kbd> ou double clic : plein écran. <kbd>p</kbd> : playlist, <kbd>n</kbd> et <kbd>b</kbd> : piste suivante et précédente. <kbd>o</kbd> : ajouter des fichiers. <kbd>?</kbd> : cette console.</li>
-      </ul>
-      <h2>Ce que montre le paysage</h2>
-      <ul>
-        <li>Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</li>
-        <li>Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. La lune montre ses mers et ses cratères, le soleil ses taches et sa couronne au crépuscule. Le cœur du set bat dans l'astre levé.</li>
-        <li>La météo change par segments de 3 minutes : ciel clair, nuageux, pluie, orage avec foudre sur les coups de sub, brouillard, neige, aurore la nuit, arc-en-ciel après la pluie de jour.</li>
-        <li>Passent au hasard : quatre espèces d'oiseaux aux routes propres, des vols en V vivants, avions de ligne, avions à hélice dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, satellites, ovnis de jour comme de nuit, ballons, cerfs-volants, papillons, chauves-souris, graines au vent, voiliers, cargos, poissons et baleines.</li>
-      </ul>
-    </section>
-    <section>
-      <h2>En direct</h2>
-      <div class="stats" id="stats"></div>
-      <h2>Spectre en direct</h2>
-      <canvas class="chart" id="chSpec"></canvas>
-      <h2>Bandes sur la dernière minute</h2>
-      <canvas class="chart" id="chBands"></canvas>
-      <div class="legend"><span><i style="background:var(--sub)"></i>sub</span><span><i style="background:var(--bass)"></i>basses</span><span><i style="background:var(--mid)"></i>médiums</span><span><i style="background:var(--high)"></i>aigus</span></div>
-    </section>
-    <section>
-      <h2>Loudness court terme sur tout le set, météo et cycle du ciel</h2>
-      <canvas class="chart tall" id="chSet"></canvas>
-      <div class="legend"><span><i style="background:#8a8f9c"></i>clair</span><span><i style="background:#5c6270"></i>nuageux</span><span><i style="background:#3d6fb0"></i>pluie</span><span><i style="background:#6a3fb5"></i>orage</span><span><i style="background:#b9bcc9"></i>brouillard</span><span><i style="background:#dbe6ff"></i>neige</span><span><i style="background:#1fbf8a"></i>aurore</span></div>
-      <h2>Répartition de la loudness</h2>
-      <canvas class="chart" id="chHist"></canvas>
-      <h2>Cadence d'affichage sur deux minutes</h2>
-      <canvas class="chart" id="chFps"></canvas>
-    </section>
-    <section>
-      <h2>Passages depuis l'ouverture de la page</h2>
-      <canvas class="chart tall" id="chEvents" style="height:300px"></canvas>
-      <h2>Par tranche de dix minutes</h2>
-      <table id="segments"></table>
-    </section>
-  </div>
+  <header>
+    <h1>Cor ex machina, horizon <small>version __VERSION__</small></h1>
+    <p id="stateLine"></p>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-for="aide">Aide</button>
+    <button role="tab" aria-selected="false" data-for="direct">En direct</button>
+    <button role="tab" aria-selected="false" data-for="set">Le set</button>
+    <button role="tab" aria-selected="false" data-for="passages">Passages</button>
+  </nav>
+  <section data-tab="aide" class="active">
+    <div class="grid2">
+      <div>
+        <h2>Commandes</h2>
+        <dl class="keys">
+          <dt><kbd>clic</kbd> dans l'eau</dt><dd>lecture ou pause</dd>
+          <dt><kbd>clic</kbd> sur le paysage</dt><dd>saute au temps visé, à l'échelle du plan touché</dd>
+          <dt><kbd>molette</kbd></dt><dd>avance ou recule, dix fois plus vite avec <kbd>Maj</kbd></dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>10 s, ou 1 min avec <kbd>Maj</kbd> ; <kbd>Page ↑</kbd> <kbd>Page ↓</kbd> 5 min ; <kbd>Début</kbd> <kbd>Fin</kbd></dd>
+          <dt><kbd>espace</kbd></dt><dd>lecture ou pause</dd>
+          <dt><kbd>c</kbd></dt><dd>barre de contrôles : transport, position, volume, VU-mètre</dd>
+          <dt><kbd>p</kbd> <kbd>n</kbd> <kbd>b</kbd></dt><dd>playlist, piste suivante, piste précédente</dd>
+          <dt><kbd>o</kbd></dt><dd>ajouter des fichiers audio</dd>
+          <dt><kbd>f</kbd> ou double clic</dt><dd>plein écran</dd>
+          <dt><kbd>?</kbd></dt><dd>cette console</dd>
+        </dl>
+      </div>
+      <div>
+        <h2>Ce que montre le paysage</h2>
+        <p class="lead">Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</p>
+        <p class="lead">Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. Le cœur du set bat dans l'astre levé.</p>
+        <p class="lead">La météo change par segments de 3 minutes : ciel clair, nuageux, pluie, orage avec foudre sur les coups de sub, brouillard, neige, aurore la nuit, arc-en-ciel après la pluie de jour.</p>
+        <p class="lead">Passent au hasard, trois au plus à la fois et jamais deux de la même sorte : oiseaux, vols en V, avions dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, drones, chasseurs, fusées, satellites, ovnis, feux d'artifice, ballons, cerfs-volants, papillons, chauves-souris, graines, voiliers, cargos, canards, dauphins, poissons, baleines, serpent de mer, périscope.</p>
+        <p class="lead">Pour un morceau hors set, le paysage se construit en direct à l'écoute et l'analyse est gardée en cache : la fois suivante, le paysage est connu dès le départ.</p>
+      </div>
+    </div>
+  </section>
+  <section data-tab="direct">
+    <div class="grid2">
+      <div>
+        <h2>En direct</h2>
+        <div class="stats" id="stats"></div>
+      </div>
+      <div>
+        <h2>Spectre en direct <small>48 bandes, 40 Hz à 12 kHz</small></h2>
+        <canvas class="chart" id="chSpec"></canvas>
+        <h2>Bandes sur la dernière minute</h2>
+        <canvas class="chart" id="chBands"></canvas>
+        <div class="legend"><span><i style="background:var(--sub)"></i>sub</span><span><i style="background:var(--bass)"></i>basses</span><span><i style="background:var(--mid)"></i>médiums</span><span><i style="background:var(--high)"></i>aigus</span></div>
+        <h2>Cadence d'affichage <small>deux minutes</small></h2>
+        <canvas class="chart" id="chFps"></canvas>
+      </div>
+    </div>
+  </section>
+  <section data-tab="set">
+    <h2>Loudness court terme sur tout le morceau <small>météo et cycle du ciel en dessous</small></h2>
+    <canvas class="chart tall" id="chSet"></canvas>
+    <div class="legend"><span><i style="background:#8a8f9c"></i>clair</span><span><i style="background:#5c6270"></i>nuageux</span><span><i style="background:#3d6fb0"></i>pluie</span><span><i style="background:#6a3fb5"></i>orage</span><span><i style="background:#b9bcc9"></i>brouillard</span><span><i style="background:#dbe6ff"></i>neige</span><span><i style="background:#1fbf8a"></i>aurore</span></div>
+    <div class="grid2">
+      <div>
+        <h2>Répartition de la loudness</h2>
+        <canvas class="chart" id="chHist"></canvas>
+      </div>
+      <div>
+        <h2>Par tranche de dix minutes</h2>
+        <table id="segments"></table>
+      </div>
+    </div>
+  </section>
+  <section data-tab="passages">
+    <h2>Passages depuis l'ouverture de la page <small>par type, et ce qui est à l'écran</small></h2>
+    <canvas class="chart tall" id="chEvents" style="height:380px"></canvas>
+  </section>
 </aside>
 <aside id="playlist" hidden>
   <button class="close" id="plClose">Fermer (Échap)</button>
@@ -153,6 +217,7 @@
 </aside>
 <div id="dropzone"><div><span>🌊</span>Lâche tes morceaux ici</div></div>
 <div id="toast"></div>
+<div id="controls" hidden></div>
 <script type="application/json" id="data">__DATA__</script>
 <script>
 __SCRIPT__

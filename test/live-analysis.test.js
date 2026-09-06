@@ -32,3 +32,11 @@ test('LiveAnalysis se remet à zéro pour un nouveau morceau', () => {
   l.feed(0, { loud: -20, peak: -3, sub: .5, bass: .5, mid: .5, high: .5 }); l.feed(.6, { loud: -20, peak: -3, sub: .5, bass: .5, mid: .5, high: .5 });
   l.reset(); assert.equal(l.S.length, 0); assert.equal(l.duration, 0);
 });
+
+test('un saut en avant dans le morceau garde l’alignement temporel des échantillons', () => {
+  const l = new LiveAnalysis(.5);
+  l.feed(0, { loud: -20, peak: -3, sub: .5, bass: .5, mid: .5, high: .5 });
+  l.feed(10, { loud: -10, peak: -3, sub: .5, bass: .5, mid: .5, high: .5 });
+  assert.equal(l.S.length, 21, 'vingt et un échantillons pour dix secondes');
+  assert.equal(l.at(l.S, 10), -10);
+});

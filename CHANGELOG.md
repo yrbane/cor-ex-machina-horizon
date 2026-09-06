@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 1.5.0 — 2026-09-06 · « Cabine »
+
+- Barre de contrôles sur <kbd>c</kbd>, construite avec les Web Components de potard (MIT, embarqués) : transport, position, volume, VU-mètre, témoin d'analyse en direct, accès à la playlist, à l'aide et au plein écran.
+- Trois passages au plus à la fois, jamais deux de la même sorte.
+- Cache des analyses construites en direct : une piste déjà entendue retrouve son paysage dès le départ, sauvegarde toutes les quinze secondes, à la pause et à la fin, éviction des plus anciennes quand le stockage déborde. Un saut en avant dans le morceau garde l'alignement temporel.
+- Console réorganisée en onglets : Aide, En direct, Le set, Passages ; commandes en tableau de touches, tuiles colorées, graphiques dessinés seulement quand leur onglet est visible.
+- Playlist et panneaux : entêtes, touches et espacements peaufinés.
+- Sept tests de plus, 72 au total.
+
 ## 1.4.0 — 2026-09-06 · « Embarquement »
 
 - Playlist plus vivante : glisser-déposer de fichiers et de dossiers n'importe où sur la page, avec une zone d'accueil animée ; une icône par piste tirée de son nom ; égaliseur à quatre barres et barre de progression sur la piste en cours ; réordonnancement à la souris ; mélange, boucle, compteur de pistes et de durée ; durées lues depuis les métadonnées ; arrivée des pistes animée ; accent coloré qui suit la teinte du paysage.

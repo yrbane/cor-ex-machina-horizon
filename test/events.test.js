@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES, BEHIND_CLOUDS } from '../src/events.js';
+import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES, BEHIND_CLOUDS, MAX_EVENTS } from '../src/events.js';
 import { seeded } from './fakeCtx.js';
 
 const day = { day: 1, dusk: 0 }, night = { day: 0, dusk: 0 };
@@ -29,6 +29,15 @@ test('le mauvais temps cloue au sol ce qui vole léger, et la comète est unique
   assert.equal(canSpawn('kite', day, storm, []), false);
   assert.equal(canSpawn('airliner', day, storm, []), true);
   assert.equal(canSpawn('comet', night, clear, [{ type: 'comet' }]), false);
+});
+
+test('jamais plus de trois passages à la fois, jamais deux du même type', () => {
+  assert.equal(MAX_EVENTS, 3);
+  assert.equal(canSpawn('bird', day, clear, [{ type: 'bird' }]), false, 'un oiseau à la fois');
+  assert.equal(canSpawn('bird', day, clear, [{ type: 'kite' }, { type: 'ship' }, { type: 'drone' }]), false, 'trois déjà présents');
+  assert.equal(canSpawn('bird', day, clear, [{ type: 'kite' }, { type: 'ship' }]), true);
+  const rng = seeded(5), list = [];
+  for (let i = 0; i < 4000; i++) { tickEvents(list, .5, day, .005, clear, rng, i * .5); assert.ok(list.length <= 3, 'jamais plus de trois'); assert.equal(new Set(list.map(e => e.type)).size, list.length, 'types tous différents'); }
 });
 
 test('spawn crée un passage hors écran, avec ses paramètres, pour chaque type', () => {

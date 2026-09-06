@@ -14,7 +14,7 @@ python -m http.server 8080
 
 puis ouvrir `http://localhost:8080/` et cliquer sur la page. Servie en HTTP, la page analyse le son en temps réel. Ouverte directement depuis le disque, elle suit l'analyse précalculée, ou le son si on charge le fichier avec la touche `o`.
 
-Commandes : `p` ouvre la playlist pour lire d'autres morceaux, clic dans l'eau pour lire ou mettre en pause, clic sur le paysage pour sauter au temps visé, molette pour avancer ou reculer, flèches, Page haut et bas, Début et Fin, `f` pour le plein écran, `?` pour la console de documentation et de statistiques.
+Commandes : `c` affiche la barre de contrôles, `p` ouvre la playlist pour lire d'autres morceaux, clic dans l'eau pour lire ou mettre en pause, clic sur le paysage pour sauter au temps visé, molette pour avancer ou reculer, flèches, Page haut et bas, Début et Fin, `f` pour le plein écran, `?` pour la console de documentation et de statistiques.
 
 ## Développement
 
@@ -35,7 +35,9 @@ Aucune dépendance : Node 20 ou plus suffit. Les modules de `src/` sont des modu
 | `src/events.js` | règles d'apparition et mouvements des passages |
 | `src/hud.js` | timecode discret |
 | `src/playlist.js`, `src/playlist-panel.js` | playlist, index de dossier distant, panneau |
-| `src/live-analysis.js` | analyse construite en direct pour les morceaux hors set |
+| `src/live-analysis.js`, `src/analysis-cache.js` | analyse construite en direct pour les morceaux hors set, et son cache |
+| `src/controls.js` | barre de contrôles sur potard |
+| `vendor/potard/` | [potard](https://github.com/yrbane/potard), contrôles audio en Web Components, MIT, embarqués dans le fichier final |
 | `src/waveform.js` | sources de signal pour la forme d'onde du premier plan, et le bandeau qui les combine |
 | `src/draw/*.js` | dessins : astres, paysage, passages, nuages en sprites, météo, eau, forme d'onde, console |
 | `src/main.js` | câblage de la page : audio, boucle de rendu, interactions |

@@ -16,8 +16,12 @@ import { drawHud } from './hud.js';
 import { LiveAnalysis } from './live-analysis.js';
 import { Playlist, trackName } from './playlist.js';
 import { PlaylistPanel } from './playlist-panel.js';
+import { ControlsBar } from './controls.js';
+import { AnalysisCache, cacheKey } from './analysis-cache.js';
+import { tc } from './util.js';
 
 // Câblage de la page : audio, analyse, boucle de rendu, interactions, console
+defineControls();   // Web Components de potard
 const DATA = JSON.parse(document.getElementById('data').textContent);
 const SET = new Analysis(DATA), LIVE = new LiveAnalysis(.5); let A = SET;   // A : analyse de la piste courante
 const dur = () => (isFinite(audio.duration) && audio.duration > 0) ? audio.duration : (A === SET ? SET.duration : Math.max(LIVE.duration, 1));
@@ -177,9 +181,11 @@ function frame() {
   if (kickFlash > .02) { ctx.fillStyle = `rgba(255,240,220,${kickFlash * .08})`; ctx.fillRect(0, 0, W, H); }
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, Math.hypot(W, H) / 2); vg.addColorStop(0, 'rgba(6,7,12,0)'); vg.addColorStop(1, `rgba(6,7,12,${lerp(.6, .35, sky.day)})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   if (!started) { const p = .5 + .5 * Math.sin(tn * 1.2); ctx.strokeStyle = `rgba(234,231,221,${.25 + p * .4})`; ctx.lineWidth = 2; ctx.beginPath(); if (src && srcVis > .5) ctx.arc(src.x, src.y, src.r * 1.6 + p * 4, 0, TAU); else ctx.arc(W / 2, H / 2, 5 + p * 5, 0, TAU); ctx.stroke(); }
-  if (started && konsole.hidden) drawHud(ctx, t, dur(), { W, H }, .5);
+  if (A === LIVE && playing && tn - lastSave > 15) saveCache(false);
+  if (!controls.hidden) controls.tick();
+  if (started && konsole.hidden && controls.hidden) drawHud(ctx, t, dur(), { W, H }, .5);
   if (!plPanel.hidden && (stats.frames % 15 === 0)) plPanel.el.style.setProperty('--accent', hsl(hue, 'sub', 85, 60));
-  document.body.classList.toggle('hidecursor', playing && tn - idleT > 2 && konsole.hidden && plPanel.hidden);
+  document.body.classList.toggle('hidecursor', playing && tn - idleT > 2 && konsole.hidden && plPanel.hidden && controls.hidden);
   adapt(performance.now() - w0);
   if (!konsole.hidden && tn - konsole.last > .25) { konsole.last = tn; konsole.render({ t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap: FPS_CAP, track: playlist.current && playlist.current.name, dur: dur() }); }
   requestAnimationFrame(frame);
@@ -194,6 +200,7 @@ try { playlist.load(JSON.parse(localStorage.getItem('horizon.playlist') || '[]')
 const savePl = () => { try { localStorage.setItem('horizon.playlist', JSON.stringify(playlist.toJSON())); } catch (e) { /* idem */ } };
 function playTrack(track, retryWithoutCors) {
   if (!track) return;
+  saveCache(false); cacheK = null;
   A = track.isSet ? SET : LIVE; if (!track.isSet) LIVE.reset();
   layers = makeLayers(A.S, A.step); layersN = A.S.length; dataKick = new DataKick(A); waveStrip.env = new EnvelopeWaveSource(A, 3); liveWave.reset(); events.length = 0;
   const remote = /^https?:/i.test(track.src);
@@ -202,11 +209,23 @@ function playTrack(track, retryWithoutCors) {
   plPanel.refresh(); plPanel.announce(track);
 }
 audio.addEventListener('error', () => { const tr = playlist.current; if (tr && audio.getAttribute('crossorigin') && /^https?:/i.test(tr.src)) { playTrack(tr, true); return; } audioFailed = true; });
-audio.addEventListener('ended', () => { const nx = playlist.next(); if (nx) playTrack(nx); });
+audio.addEventListener('ended', () => { saveCache(true); const nx = playlist.next(); if (nx) playTrack(nx); });
+// Cache des analyses construites en direct : une piste déjà entendue retrouve son paysage
+const cache = new AnalysisCache(localStorage); let cacheK = null, lastSave = 0;
+function loadCache() { const tr = playlist.current; if (!tr || tr.isSet || A !== LIVE || !isFinite(audio.duration)) return; cacheK = cacheKey(tr, audio.duration); const data = cache.load(cacheK); if (data) { LIVE.load(data); layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }
+function saveCache(complete) { if (A !== LIVE || !cacheK || LIVE.S.length < 4) return; cache.save(cacheK, LIVE, complete || (LIVE.duration >= audio.duration - 1)); lastSave = now(); }
+audio.addEventListener('loadedmetadata', loadCache);
+audio.addEventListener('pause', () => saveCache(false));
 const plPanel = new PlaylistPanel(document, playlist, { onPlay: tr => playTrack(tr), onChange: savePl, fetchText: async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); return r.text(); }, levels: () => disp, progress: () => (audio.currentTime || 0) / Math.max(1, dur()) });
 document.getElementById('closeBtn').addEventListener('click', e => { e.stopPropagation(); konsole.toggle(false); });
 konsole.el.addEventListener('click', e => e.stopPropagation());
 konsole.el.addEventListener('dblclick', e => e.stopPropagation());
+const controls = new ControlsBar(document, {
+  play: () => { if (!started) toggle(); else { audio.play(); if (actx) actx.resume(); } }, pause: () => audio.pause(), isPlaying: () => started && !audio.paused,
+  prev: () => playTrack(playlist.prev()), next: () => playTrack(playlist.next()), seek: tt => seekTo(tt), position: () => audio.currentTime || 0, duration: () => dur(), tc,
+  volume: v => { audio.volume = clamp(v, 0, 1); }, getVolume: () => audio.volume, level: () => clamp((disp.sub + disp.bass + disp.mid + disp.high) / 3.2, 0, 1), live: () => live,
+  togglePlaylist: () => plPanel.toggle(), toggleConsole: () => konsole.toggle(), fullscreen: () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(),
+});
 function toggle() {
   if (audioFailed) { plPanel.toggle(true); return; }
   if (!started) { started = true; audio.play().then(startAnalyser).catch(() => {}); return; }
@@ -220,13 +239,15 @@ document.addEventListener('click', e => {
   clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp })); }, 220);
 });
 document.addEventListener('dblclick', () => { clearTimeout(clickTimer); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); });
-addEventListener('wheel', e => { if (konsole.el.contains(e.target) || plPanel.el.contains(e.target)) return; e.preventDefault(); if (started) seekTo(audio.currentTime + e.deltaY * (e.shiftKey ? .6 : .06)); }, { passive: false });
+addEventListener('wheel', e => { if (konsole.el.contains(e.target) || plPanel.el.contains(e.target) || controls.el.contains(e.target)) return; e.preventDefault(); if (started) seekTo(audio.currentTime + e.deltaY * (e.shiftKey ? .6 : .06)); }, { passive: false });
 document.addEventListener('keydown', e => {
   if (e.key === '?' || (e.key === 'h' && !e.ctrlKey)) { e.preventDefault(); konsole.toggle(); return; }
+  if (e.target && e.target.closest && e.target.closest('#controls, #playlist input, #playlist button')) return;   // les contrôles gardent leur clavier
+  if (e.key === 'c') { e.preventDefault(); controls.toggle(); return; }
   if (e.key === 'p') { e.preventDefault(); plPanel.toggle(); return; }
   if (e.key === 'n') { playTrack(playlist.next()); return; }
   if (e.key === 'b') { playTrack(playlist.prev()); return; }
-  if (e.key === 'Escape') { konsole.toggle(false); plPanel.toggle(false); return; }
+  if (e.key === 'Escape') { konsole.toggle(false); plPanel.toggle(false); controls.toggle(false); return; }
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
   else if (e.key === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
   else if (e.key === 'ArrowRight') seekTo(audio.currentTime + (e.shiftKey ? 60 : 10));
