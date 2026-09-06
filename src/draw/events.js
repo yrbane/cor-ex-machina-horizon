@@ -560,7 +560,7 @@ const DRAW = {
 
   // --- les poissons de toutes sortes, nombreux : la silhouette dépend de l'espèce ---------------------------------------
   fishes(ctx, e, c) {
-    const { H, x, y, tn } = c, sp = e.species || 'tuna', s = H * .012 * (e.size || 1), d = e.dir, tail = Math.sin(tn * 6 + e.ph) * s * .4, col = e.col, dark = 'rgba(10,14,24,.9)';
+    const { H, x, y, tn } = c, sp = e.species || 'tuna', s = H * .017 * (e.size || 1), d = e.dir, tail = Math.sin(tn * 6 + e.ph) * s * .4, col = e.col, dark = 'rgba(10,14,24,.9)';
     const P = pts => poly(ctx, pts.map(([px, py]) => [x + d * px * s, y + py * s]));
     const eye = (ex, ey, r = .12) => { ctx.fillStyle = '#f5f5f5'; ctx.beginPath(); ctx.arc(x + d * ex * s, y + ey * s, s * r * 1.6, 0, TAU); ctx.fill(); ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(x + d * (ex + .04) * s, y + ey * s, s * r, 0, TAU); ctx.fill(); };
     const body = (rx, ry, fill = col) => { ctx.fillStyle = fill; ctx.beginPath(); ctx.ellipse(x, y, s * rx, s * ry, 0, 0, TAU); ctx.fill(); };

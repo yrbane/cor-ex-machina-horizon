@@ -40,7 +40,7 @@ export const TYPES = {
   tram:        { rate: 1 / 240, label: 'tramways', where: 'city', single: true },
   // Fond des océans
   school:      { rate: 1 / 15,  label: 'bancs de poissons', where: 'sea' },
-  fishes:      { rate: 1 / 1,   label: 'poissons de toutes sortes', where: 'sea', crowd: 16 },
+  fishes:      { rate: 1 / .8,  label: 'poissons de toutes sortes', where: 'sea', crowd: 20 },
   leviathan:   { rate: 1 / 700, label: 'baleines géantes', where: 'sea', single: true },
   shark:       { rate: 1 / 120, label: 'requins', where: 'sea', single: true },
   turtle:      { rate: 1 / 90,  label: 'tortues', where: 'sea' },

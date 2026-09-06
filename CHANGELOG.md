@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 1.9.1 — 2026-09-06 · « Plus de poissons »
+
+- Les poissons sont plus gros et plus nombreux : jusqu'à vingt à la fois, et ils arrivent plus vite.
+
 ## 1.9.0 — 2026-09-06 · « L'aquarium »
 
 - Au fond des océans, les poissons sont nombreux et de toutes sortes : quatorze espèces, poisson-clown, chirurgien, poisson-ange, poisson-globe qui se gonfle, hippocampe, murène, rascasse volante, espadon, thon, poisson-papillon, mérou tacheté, barracuda, poisson-lune, discus, en dix couleurs, jusqu'à seize à la fois. Deux poissons présents en même temps n'ont jamais la même espèce dans la même couleur ; les petits font demi-tour, les grands filent.
