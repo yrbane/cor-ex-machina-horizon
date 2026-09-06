@@ -11,6 +11,8 @@ import { drawRain, drawSnow, drawFog, drawAurora, drawRainbow, Lightning } from 
 import { drawWater } from './draw/water.js';
 import { Console } from './draw/console.js';
 import { RingWaveSource, EnvelopeWaveSource, WaveformStrip } from './waveform.js';
+import { CloudSprites, makeCloud, drawCloud } from './draw/clouds.js';
+import { drawHud } from './hud.js';
 
 // Câblage de la page : audio, analyse, boucle de rendu, interactions, console
 const DATA = JSON.parse(document.getElementById('data').textContent);
@@ -95,13 +97,10 @@ const follow = (c, tgt, up, down) => c + (tgt - c) * (tgt > c ? up : down);
 const waves = [], events = [], lightning = new Lightning();
 let curW = { w: 'clear', k: 0, dark: 0, rainbow: 0 }, curSky = skyState(0), curSrc = null;
 const layers = makeLayers(A.S, A.step);
-const stars = Array.from({ length: 90 }, () => ({ x: rng(), y: rng() * .6, s: .5 + rng() * 1.5, p: rng() * TAU }));
+const stars = Array.from({ length: 110 }, () => ({ x: rng(), y: rng() * .6, s: .5 + rng() * rng() * 2.2, p: rng() * TAU, col: rng() < .12 ? '190,210,255' : rng() < .2 ? '255,225,190' : '234,231,221' }));
 const streaks = Array.from({ length: 36 }, () => ({ x: rng(), y: .1 + rng() * .7, v: .3 + rng() * .7, len: .02 + rng() * .06, band: BANDS[1 + Math.floor(rng() * 3)] }));
-const clouds = Array.from({ length: 9 }, () => {
-  const depth = .3 + rng() * .7, n = 4 + Math.floor(rng() * 4), parts = [];
-  for (let i = 0; i < n; i++) parts.push({ dx: (i / (n - 1) - .5) * 1.6, dy: -Math.abs(i / (n - 1) - .5) * .5 + rng() * .2, r: .45 + rng() * .45 });
-  return { x: rng() * 1.3 - .15, y: .12 + (1 - depth) * .25 + rng() * .15, depth, size: .05 + depth * .07, parts };
-}).sort((a, b) => a.depth - b.depth);
+const clouds = Array.from({ length: 9 }, () => makeCloud(rng)).sort((a, b) => a.depth - b.depth);
+const cloudSprites = new CloudSprites((w, h) => { const cv2 = document.createElement('canvas'); cv2.width = w; cv2.height = h; return { canvas: cv2, ctx: cv2.getContext('2d') }; });
 let mouseX = .5, mouseY = .5;
 const geo = { horizon: 0, wTop: 0, parX: 0 };
 addEventListener('mousemove', e => { mouseX = e.clientX / innerWidth; mouseY = e.clientY / innerHeight; idleT = now(); }, { passive: true });
@@ -137,7 +136,7 @@ function frame() {
   if (sky.dusk > .02) { const d = ctx.createLinearGradient(0, horizon * .45, 0, horizon); d.addColorStop(0, hsl(hue, 'sub', 85, 50, 0)); d.addColorStop(1, hsl(hue, 'sub', 85, 50, sky.dusk * .55)); ctx.fillStyle = d; ctx.fillRect(0, 0, W, horizon); }
   if (wx.dark > 0) { ctx.fillStyle = `rgba(8,10,18,${wx.dark * .5})`; ctx.fillRect(0, 0, W, horizon); }
   const starA = (1 - sky.day) * (1 - wx.dark), starShift = (t / 3600) % 1;
-  if (starA > .02) for (const s of stars) { const x = (((s.x - starShift * .5 - parX * .02) % 1) + 1) % 1 * W, y = (s.y - parY * .02) * horizon, tw = .5 + .5 * Math.sin(tn * 2 + s.p); ctx.fillStyle = `rgba(234,231,221,${(.25 + tw * .35 + disp.high * .3) * starA})`; ctx.fillRect(x, y, s.s, s.s); }
+  if (starA > .02) for (const s of stars) { const x = (((s.x - starShift * .5 - parX * .02) % 1) + 1) % 1 * W, y = (s.y - parY * .02) * horizon, tw = .5 + .5 * Math.sin(tn * 2 + s.p); ctx.fillStyle = `rgba(${s.col},${(.25 + tw * .35 + disp.high * .3) * starA})`; ctx.fillRect(x, y, s.s, s.s); }
   if (wx.w === 'aurora' && starA > .4) drawAurora(ctx, tn, wx.k * starA, horizon, W, hue, disp.mid);
   // Astres : un seul à la fois, découpés au-dessus de l'horizon ; ondes des coups depuis l'astre visible
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, horizon); ctx.clip();
@@ -158,9 +157,8 @@ function frame() {
   for (const c of clouds) {
     c.x -= dt * wind * c.depth; if (c.x < -.3) { c.x = 1.3; c.y = .12 + (1 - c.depth) * .25 + rng() * .15; }
     const cx = (c.x - parX * .03 * c.depth) * W, cy = (c.y - parY * .02 * c.depth) * horizon, s = c.size * W;
-    const l = lerp(14 + c.depth * 4, 88, sky.day) + sky.dusk * 12 - wx.dark * 30, sat = lerp(25, 12, sky.day) + sky.dusk * 45 - wx.dark * 10, hueC = sky.dusk > sky.day ? hs : lerp(hb, 215, sky.day);
-    ctx.fillStyle = `hsla(${hueC},${sat}%,${l}%,${.55 + c.depth * .3 + wx.dark * .2})`;
-    ctx.beginPath(); for (const p of c.parts) { ctx.moveTo(cx + p.dx * s + p.r * s * .45, cy + p.dy * s); ctx.arc(cx + p.dx * s, cy + p.dy * s, p.r * s * .45, 0, TAU); } ctx.fill();
+    const light = { hue: sky.dusk > sky.day ? hs : lerp(hb, 215, sky.day), sat: lerp(25, 12, sky.day) + sky.dusk * 45 - wx.dark * 10, l: lerp(14 + c.depth * 4, 88, sky.day) + sky.dusk * 12 - wx.dark * 30, a: .55 + c.depth * .3 + wx.dark * .2 };
+    drawCloud(ctx, c, cloudSprites.get(c, light, s), cx, cy, s);
   }
   for (const e of events) if (!WATER_TYPES.includes(e.type) && !BEHIND_CLOUDS.includes(e.type)) drawEvent(ctx, e, scene, sky);
   // Plans du paysage, brume, précipitations
@@ -176,6 +174,7 @@ function frame() {
   if (kickFlash > .02) { ctx.fillStyle = `rgba(255,240,220,${kickFlash * .08})`; ctx.fillRect(0, 0, W, H); }
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, Math.hypot(W, H) / 2); vg.addColorStop(0, 'rgba(6,7,12,0)'); vg.addColorStop(1, `rgba(6,7,12,${lerp(.6, .35, sky.day)})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   if (!started) { const p = .5 + .5 * Math.sin(tn * 1.2); ctx.strokeStyle = `rgba(234,231,221,${.25 + p * .4})`; ctx.lineWidth = 2; ctx.beginPath(); if (src && srcVis > .5) ctx.arc(src.x, src.y, src.r * 1.6 + p * 4, 0, TAU); else ctx.arc(W / 2, H / 2, 5 + p * 5, 0, TAU); ctx.stroke(); }
+  if (started && konsole.hidden) drawHud(ctx, t, DUR, { W, H }, .5);
   document.body.classList.toggle('hidecursor', playing && tn - idleT > 2 && konsole.hidden);
   adapt(performance.now() - w0);
   if (!konsole.hidden && tn - konsole.last > .25) { konsole.last = tn; konsole.render({ t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap: FPS_CAP }); }

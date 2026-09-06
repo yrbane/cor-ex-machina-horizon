@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fakeCtx, seeded } from './fakeCtx.js';
-import { spawn } from '../src/events.js';
+import { spawn, TYPES } from '../src/events.js';
 import { drawEvent } from '../src/draw/events.js';
 import { drawBody } from '../src/draw/bodies.js';
 import { layerValue, drawLayer, makeLayers } from '../src/draw/landscape.js';
@@ -11,7 +11,7 @@ const day = { day: 1, dusk: 0, sun: { up: true }, moon: { up: false } }, night =
 
 test('chaque type de passage se dessine sans erreur, de jour et de nuit, dans les deux sens', () => {
   const rng = seeded(2);
-  for (const k of ['bird', 'flock', 'airliner', 'prop', 'heli', 'balloon', 'zeppelin', 'paraglider', 'satellite', 'ufo', 'shooting', 'comet', 'balloons', 'kite', 'butterflies', 'bat', 'seeds', 'sailboat', 'ship', 'fish', 'whale']) {
+  for (const k of Object.keys(TYPES)) {
     for (const dir of [1, -1]) for (const sky of [day, night]) {
       const e = spawn(k, rng, 0); e.dir = dir; e.x = .5; e.y = .3; e.life = .4; e.trail = [{ x: .4, y: .3, a: .5 }, { x: .5, y: .3, a: 1 }];
       const ctx = fakeCtx();

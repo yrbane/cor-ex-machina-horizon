@@ -260,6 +260,99 @@ const DRAW = {
     if (spl > 0) { ctx.fillStyle = `rgba(220,235,255,${.6 * spl})`; for (let i = 0; i < 7; i++) { const sx = (f < .25 ? x - s * 3 * e.dir : x + s * 3 * e.dir) + (hash(i + 3) - .5) * s * 3, sy = yy - hash(i + 8) * s * 2 * (spl + .2); ctx.beginPath(); ctx.arc(sx, sy, s * .25, 0, TAU); ctx.fill(); } }
   },
 
+  drone(ctx, e, c) {
+    const s = c.H * .011 * e.size, { x, y, tn, k } = c, arms = [[-1, -.6], [1, -.6], [-1, .6], [1, .6]];
+    ctx.strokeStyle = k.ink; ctx.lineWidth = Math.max(1, s * .16); ctx.beginPath(); for (const [ax, ay] of arms) { ctx.moveTo(x, y); ctx.lineTo(x + ax * s * 1.6, y + ay * s * .9); } ctx.stroke(); // bras
+    for (const [ax, ay] of arms) { const rx = x + ax * s * 1.6, ry = y + ay * s * .9; ctx.fillStyle = `rgba(200,205,220,${.25 + .15 * Math.abs(Math.sin(tn * 60 + ax))})`; ctx.beginPath(); ctx.ellipse(rx, ry - s * .1, s * .9, s * .18, 0, 0, TAU); ctx.fill(); ctx.fillStyle = k.ink; ctx.beginPath(); ctx.arc(rx, ry, s * .16, 0, TAU); ctx.fill(); } // rotors
+    ctx.fillStyle = k.ink; ctx.beginPath(); ctx.roundRect(x - s * .7, y - s * .3, s * 1.4, s * .6, s * .2); ctx.fill();          // corps
+    ctx.fillStyle = 'rgba(40,60,90,.9)'; ctx.beginPath(); ctx.arc(x, y + s * .35, s * .18, 0, TAU); ctx.fill();                       // caméra
+    const on = (tn % 1) < .5; ctx.fillStyle = on ? 'rgba(255,60,50,.95)' : 'rgba(255,60,50,.25)'; ctx.beginPath(); ctx.arc(x - s * 1.6, y - s * .55, s * .14, 0, TAU); ctx.fill();
+    ctx.fillStyle = on ? 'rgba(60,255,90,.25)' : 'rgba(60,255,90,.95)'; ctx.beginPath(); ctx.arc(x + s * 1.6, y - s * .55, s * .14, 0, TAU); ctx.fill();
+  },
+
+  jets(ctx, e, c) {
+    const s = c.H * .014 * e.size, d = e.dir, { x, y, k, sky } = c, body = sky.day > .5 ? '#3a4152' : 'rgba(200,205,220,.95)';
+    for (const [ox, oy] of [[0, 0], [-1.6, -.9], [-1.6, .9]]) {
+      const jx = x + ox * s * 2 * d, jy = y + oy * s;
+      const g = ctx.createLinearGradient(jx - d * s * 9, jy, jx, jy); g.addColorStop(0, 'rgba(245,245,252,0)'); g.addColorStop(1, `rgba(245,245,252,${.45 * sky.day + .15})`);
+      ctx.strokeStyle = g; ctx.lineWidth = Math.max(1.5, s * .3); ctx.beginPath(); ctx.moveTo(jx - d * s * 9, jy + s * .1); ctx.lineTo(jx - d * s * 1.5, jy + s * .1); ctx.stroke();   // traînée courte
+      ctx.fillStyle = body; poly(ctx, [[jx + s * 2 * d, jy], [jx - s * 1.6 * d, jy - s * 1.1], [jx - s * 1.1 * d, jy], [jx - s * 1.6 * d, jy + s * 1.1]]);           // aile delta
+      ctx.beginPath(); ctx.ellipse(jx, jy, s * 2, s * .32, 0, 0, TAU); ctx.fill();
+      poly(ctx, [[jx - s * .9 * d, jy - s * .05], [jx - s * 1.7 * d, jy - s * .9], [jx - s * 1.5 * d, jy - s * .05]]);                                             // dérive
+      ctx.fillStyle = k.glass; ctx.beginPath(); ctx.ellipse(jx + s * .5 * d, jy - s * .2, s * .5, s * .2, 0, 0, TAU); ctx.fill();                                   // verrière
+      ctx.fillStyle = `rgba(255,${150 + Math.random() * 80},60,.85)`; poly(ctx, [[jx - s * 2 * d, jy - s * .15], [jx - s * 2 * d, jy + s * .15], [jx - s * (2.6 + Math.random() * .5) * d, jy]]); // postcombustion
+    }
+  },
+
+  rocket(ctx, e, c) {
+    const s = c.H * .02 * e.size, { x, y, tn } = c, ang = Math.atan2(e.tilt, -1) + Math.PI / 2;
+    for (const p of e.smoke) { if (p.a <= 0) continue; ctx.fillStyle = `rgba(210,210,220,${p.a * .35})`; ctx.beginPath(); ctx.arc(p.x * c.W, p.y * c.horizon + s * 1.8, s * (.4 + (1 - p.a) * 1.6), 0, TAU); ctx.fill(); } // fumée
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    const fl = .7 + .3 * Math.sin(tn * 40); ctx.fillStyle = 'rgba(255,190,60,.9)'; poly(ctx, [[-s * .3, s * 1.2], [s * .3, s * 1.2], [0, s * (1.2 + 1.8 * fl)]]); ctx.fillStyle = 'rgba(255,240,200,.95)'; poly(ctx, [[-s * .15, s * 1.2], [s * .15, s * 1.2], [0, s * (1.2 + .9 * fl)]]); // flamme
+    ctx.fillStyle = '#f2f2f5'; ctx.fillRect(-s * .35, -s * .9, s * .7, s * 2.1);                                                        // corps
+    ctx.fillStyle = '#e8402f'; poly(ctx, [[-s * .35, -s * .9], [s * .35, -s * .9], [0, -s * 1.8]]); poly(ctx, [[-s * .35, s * .6], [-s * .8, s * 1.3], [-s * .35, s * 1.2]]); poly(ctx, [[s * .35, s * .6], [s * .8, s * 1.3], [s * .35, s * 1.2]]); // pointe et ailerons
+    ctx.fillStyle = 'rgba(40,60,90,.9)'; ctx.beginPath(); ctx.arc(0, -s * .3, s * .16, 0, TAU); ctx.fill();                          // hublot
+    ctx.restore();
+  },
+
+  fireworks(ctx, e, c) {
+    const f = e.life / e.ttl, { x, y } = c, ease = 1 - Math.pow(1 - f, 3), r = c.H * .14 * ease, fade = 1 - f;
+    ctx.globalCompositeOperation = 'lighter';
+    if (f < .12) { ctx.fillStyle = `rgba(255,255,255,${(1 - f / .12) * .6})`; ctx.beginPath(); ctx.arc(x, y, c.H * .03, 0, TAU); ctx.fill(); }
+    for (let i = 0; i < e.n; i++) {
+      const a = i / e.n * TAU + hash(i + e.ph) * .3, rr = r * (.85 + hash(i + 7) * .3), drop = f * f * c.H * .08;
+      const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr + drop, col = i % 2 ? e.col : e.col2;
+      ctx.strokeStyle = col; ctx.globalAlpha = fade * .5; ctx.lineWidth = Math.max(1, c.H * .003); ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * rr * .7, y + Math.sin(a) * rr * .7 + drop * .6); ctx.lineTo(px, py); ctx.stroke();
+      ctx.fillStyle = col; ctx.globalAlpha = fade * (.6 + .4 * Math.sin(c.tn * 20 + i)); ctx.beginPath(); ctx.arc(px, py, Math.max(1, c.H * .004), 0, TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  },
+
+  ducks(ctx, e, c) {
+    const { wTop, H, x, tn, k } = c, s = H * (.006 + e.d * .012), yy = wTop + e.d * (H - wTop) * .35, d = e.dir;
+    for (let i = 0; i < e.n; i++) {
+      const sz = i ? s * .65 : s, dx = x - d * i * s * 2.4, bob = Math.sin(tn * 2 + i) * sz * .15, dy = yy + bob;
+      ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(dx - d * sz, dy + sz * .2); ctx.lineTo(dx - d * sz * 3, dy + sz * .5); ctx.stroke();
+      ctx.fillStyle = i ? '#d9b44a' : '#5a3d22'; ctx.beginPath(); ctx.ellipse(dx, dy, sz * 1.1, sz * .5, 0, 0, TAU); ctx.fill();          // corps
+      ctx.beginPath(); ctx.arc(dx + d * sz * .8, dy - sz * .7, sz * .42, 0, TAU); ctx.fill();                                            // tête
+      ctx.fillStyle = '#f2a33a'; poly(ctx, [[dx + d * sz * 1.15, dy - sz * .75], [dx + d * sz * 1.7, dy - sz * .6], [dx + d * sz * 1.15, dy - sz * .5]]); // bec
+      ctx.fillStyle = k.ink; ctx.beginPath(); ctx.arc(dx + d * sz * .95, dy - sz * .8, Math.max(.6, sz * .08), 0, TAU); ctx.fill();
+    }
+  },
+
+  dolphins(ctx, e, c) {
+    const { wTop, H, x } = c, s = H * (.012 + e.d * .02), yy = wTop + e.d * (H - wTop) * .5;
+    for (let i = 0; i < e.n; i++) {
+      const f = clamp(e.life / e.ttl - i * .18, 0, 1); if (f <= 0 || f >= 1) continue;
+      const fx = x + (f - .5) * s * 9 * e.dir + i * s * 2.5, fy = yy - Math.sin(f * Math.PI) * s * 4.5, ang = Math.atan2(-Math.cos(f * Math.PI) * s * 4.5 * Math.PI, s * 9 * e.dir);
+      ctx.save(); ctx.translate(fx, fy); ctx.rotate(ang);
+      ctx.fillStyle = 'rgba(120,140,170,.95)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 1.6, s * .5, 0, 0, TAU); ctx.fill();
+      poly(ctx, [[-s * 1.4, 0], [-s * 2.2, -s * .7], [-s * 2.2, s * .7]]); poly(ctx, [[-s * .2, -s * .4], [s * .2, -s * 1.1], [s * .5, -s * .4]]);   // queue, aileron
+      ctx.fillStyle = 'rgba(200,215,235,.9)'; ctx.beginPath(); ctx.ellipse(s * .2, s * .15, s * 1.2, s * .25, 0, 0, TAU); ctx.fill();      // ventre clair
+      ctx.fillStyle = 'rgba(20,20,30,.9)'; ctx.beginPath(); ctx.arc(s * 1.05, -s * .12, s * .09, 0, TAU); ctx.fill();
+      ctx.restore();
+      if (f < .2 || f > .8) { const sp = f < .2 ? 1 - f * 5 : (f - .8) * 5; ctx.fillStyle = `rgba(220,235,255,${.5 * sp})`; for (let j = 0; j < 6; j++) { ctx.beginPath(); ctx.arc(fx + (hash(j + i) - .5) * s * 3, yy - hash(j + 4) * s * 1.5 * sp, s * .2, 0, TAU); ctx.fill(); } }
+    }
+  },
+
+  serpent(ctx, e, c) {
+    const { wTop, H, x, tn, sky } = c, s = H * (.012 + e.d * .03) * e.size, yy = wTop + e.d * (H - wTop) * .4, d = e.dir, body = sky.day > .5 ? '#1f4d3a' : 'rgba(14,30,26,.95)';
+    ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - d * s * 6, yy + s * .3); ctx.lineTo(x - d * s * 12, yy + s * .8); ctx.stroke();
+    ctx.fillStyle = body;
+    for (let i = 0; i < 3; i++) { const hx = x - d * (s * 2.2 + i * s * 3.2), h = s * (1.1 - i * .2) * (.85 + .15 * Math.sin(tn * 1.5 + i)); ctx.beginPath(); ctx.ellipse(hx, yy + 1, s * 1.4, h, 0, Math.PI, 0); ctx.fill(); } // bosses
+    ctx.beginPath(); ctx.moveTo(x - d * s * .9, yy + 1); ctx.quadraticCurveTo(x - d * s * .2, yy - s * 2.4, x + d * s * .9, yy - s * 2.6); ctx.lineTo(x + d * s * .9, yy - s * 1.8); ctx.quadraticCurveTo(x + d * s * .1, yy - s * 1.6, x + d * s * .3, yy + 1); ctx.fill(); // cou
+    ctx.beginPath(); ctx.ellipse(x + d * s * 1.2, yy - s * 2.5, s * .9, s * .45, 0, 0, TAU); ctx.fill();                                 // tête
+    ctx.fillStyle = '#f2c230'; ctx.beginPath(); ctx.arc(x + d * s * 1.35, yy - s * 2.65, Math.max(.8, s * .12), 0, TAU); ctx.fill();    // œil
+  },
+
+  submarine(ctx, e, c) {
+    const { wTop, H, x, sky } = c, s = H * (.006 + e.d * .012), yy = wTop + e.d * (H - wTop) * .45, d = e.dir, ink = sky.day > .5 ? '#2a3140' : 'rgba(200,204,220,.9)';
+    ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x - d * s * 8, yy - s * .8); ctx.moveTo(x, yy); ctx.lineTo(x - d * s * 8, yy + s * .8); ctx.stroke(); // sillage en V
+    ctx.fillStyle = ink; ctx.fillRect(x - s * .18, yy - s * 2.4, s * .36, s * 2.4);                                                     // tube
+    ctx.fillRect(x - s * .18, yy - s * 2.7, s * (d > 0 ? 1.1 : .36), s * .45); if (d < 0) ctx.fillRect(x - s * 1.1, yy - s * 2.7, s * 1.1, s * .45);   // tête
+    ctx.fillStyle = 'rgba(120,200,255,.8)'; ctx.beginPath(); ctx.arc(x + d * s * .85, yy - s * 2.48, Math.max(.8, s * .14), 0, TAU); ctx.fill();   // optique
+  },
+
   whale(ctx, e, c) {
     const { wTop, H, sky, x } = c, f = e.life / e.ttl, s = H * (.02 + e.d * .03), yy = wTop + e.d * (H - wTop) * .5, rise = Math.sin(Math.min(1, f * 1.6) * Math.PI) * s * .9, body = sky.day > .5 ? '#1f2a3a' : 'rgba(14,16,26,.95)';
     if (f < .7) { ctx.fillStyle = body; ctx.beginPath(); ctx.moveTo(x - s * 2.5, yy + 1); ctx.quadraticCurveTo(x - s * .5, yy - rise * 1.6, x + s * 1.6, yy - rise * .4); ctx.lineTo(x + s * 2.5, yy + 1); ctx.fill();

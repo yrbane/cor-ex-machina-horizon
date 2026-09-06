@@ -36,7 +36,7 @@ test('spawn crée un passage hors écran, avec ses paramètres, pour chaque type
   for (const k in TYPES) {
     const e = spawn(k, rng, 0);
     assert.equal(e.type, k);
-    assert.ok(e.x <= -.1 || e.x >= 1.1 || ['shooting', 'fish', 'whale'].includes(k), `${k} entre par un bord`);
+    assert.ok(e.x <= -.1 || e.x >= 1.1 || ['shooting', 'fish', 'whale', 'fireworks', 'rocket', 'dolphins'].includes(k), `${k} entre par un bord, sauf ce qui surgit sur place`);
   }
   const bird = spawn('bird', rng, 0);
   assert.ok(SPECIES.includes(bird.sp));
@@ -75,4 +75,24 @@ test('la comète, les étoiles filantes et les satellites passent derrière les 
   for (const k of ['comet', 'shooting', 'satellite']) assert.ok(BEHIND_CLOUDS.includes(k), k);
   for (const k of ['bird', 'airliner', 'ufo', 'balloon']) assert.ok(!BEHIND_CLOUDS.includes(k), k);
   for (const k of BEHIND_CLOUDS) assert.ok(TYPES[k], k);
+});
+
+test('les nouveaux passages ont leurs règles : feux d’artifice de nuit, fusée rare, canards et dauphins sur l’eau', () => {
+  assert.equal(canSpawn('fireworks', day, clear, []), false);
+  assert.equal(canSpawn('fireworks', night, clear, []), true);
+  assert.ok(TYPES.rocket.rate < 1 / 600, 'fusée rare');
+  for (const k of ['ducks', 'dolphins', 'serpent', 'submarine']) assert.ok(WATER_TYPES.includes(k), k);
+  assert.ok(Object.keys(TYPES).length >= 29, 'au moins 29 types de passages');
+});
+
+test('la fusée monte et disparaît en haut, les feux d’artifice s’éteignent d’eux-mêmes', () => {
+  const rng = seeded(21);
+  const r = spawn('rocket', rng, 0); r.x = .5; r.y = .7; const list = [r];
+  const y0 = r.y; tickEvents(list, .5, night, 0, clear, rng, .5);
+  assert.ok(r.y < y0, 'elle monte');
+  for (let i = 0; i < 400 && list.includes(r); i++) tickEvents(list, .5, night, 0, clear, rng, i);
+  assert.ok(!list.includes(r), 'partie par le haut');
+  const f = spawn('fireworks', rng, 0); const l2 = [f];
+  for (let i = 0; i < 10; i++) tickEvents(l2, .5, night, 0, clear, rng, i);
+  assert.ok(!l2.includes(f), 'éteint');
 });

@@ -23,10 +23,18 @@ export const TYPES = {
   ship:        { rate: 1 / 380, label: 'cargos' },
   fish:        { rate: 1 / 80,  label: 'poissons' },
   whale:       { rate: 1 / 650, label: 'baleines', single: true },
+  drone:       { rate: 1 / 260, label: 'drones' },
+  jets:        { rate: 1 / 700, label: 'patrouilles de chasseurs', day: true },
+  rocket:      { rate: 1 / 1200, label: 'fusées', single: true },
+  fireworks:   { rate: 1 / 60,  label: 'feux d’artifice', night: true },
+  ducks:       { rate: 1 / 240, label: 'familles de canards', day: true },
+  dolphins:    { rate: 1 / 200, label: 'dauphins' },
+  serpent:     { rate: 1 / 900, label: 'serpents de mer', single: true },
+  submarine:   { rate: 1 / 800, label: 'périscopes', single: true },
 };
-export const WATER_TYPES = ['sailboat', 'ship', 'fish', 'whale'];
-export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
-export const TRANSIENT = ['shooting', 'fish', 'whale'];
+export const WATER_TYPES = ['sailboat', 'ship', 'fish', 'whale', 'ducks', 'dolphins', 'serpent', 'submarine'];
+export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite', 'fireworks']; // ciel profond : dessinés avant les nuages
+export const TRANSIENT = ['shooting', 'fish', 'whale', 'fireworks', 'dolphins'];
 
 // Espèces d'oiseaux : taille, cadence de battement, vitesse, ondulation, vol plané
 export const SPECIES = [
@@ -80,6 +88,14 @@ export function spawn(type, rng, tn) {
     case 'ship': Object.assign(e, { d: rnd(rng, 0, .08), v: rnd(rng, .0025, .004) }); break;
     case 'fish': Object.assign(e, { x: rnd(rng, .1, .9), d: rnd(rng, .15, .8), life: 0, ttl: .9 }); break;
     case 'whale': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .05, .35), life: 0, ttl: 7 }); break;
+    case 'drone': Object.assign(e, { y: rnd(rng, .3, .6), v: rnd(rng, .025, .045), size: rnd(rng, .8, 1.2) }); break;
+    case 'jets': Object.assign(e, { y: rnd(rng, .08, .3), v: rnd(rng, .11, .15), size: rnd(rng, .9, 1.2), n: 3 }); break;
+    case 'rocket': Object.assign(e, { x: rnd(rng, .2, .8), y: .98, v: rnd(rng, .035, .05), tilt: rnd(rng, -.15, .15), size: rnd(rng, .9, 1.3), smoke: [] }); break;
+    case 'fireworks': Object.assign(e, { x: rnd(rng, .15, .85), y: rnd(rng, .08, .35), life: 0, ttl: rnd(rng, 1.6, 2.4), col: pick(rng, PALETTE), col2: pick(rng, PALETTE), n: 18 + Math.floor(rng() * 14) }); break;
+    case 'ducks': Object.assign(e, { d: rnd(rng, .3, .8), v: rnd(rng, .004, .007), n: 3 + Math.floor(rng() * 3) }); break;
+    case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
+    case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
+    case 'submarine': Object.assign(e, { d: rnd(rng, .2, .6), v: rnd(rng, .004, .008) }); break;
   }
   return e;
 }
@@ -107,6 +123,8 @@ export function tickEvents(list, dt, sky, wind, weather, rng, tn) {
         e.x += e.dir * e.v * dt * .3; e.y = clamp(e.y, .05, .5); break;
       case 'bat': e.x += e.dir * e.v * dt * (.6 + Math.abs(Math.sin(age * 4))); e.y = clamp(e.y + Math.sin(age * 7 + e.ph) * .15 * dt + Math.cos(age * 2.3) * .05 * dt, .1, .6); break;
       case 'butterflies': e.x += e.dir * e.v * dt; e.y += Math.sin(age * 2 + e.ph) * .02 * dt; break;
+      case 'drone': e.x += e.dir * e.v * dt; e.y += (Math.sin(age * 2.7 + e.ph) * .03 + Math.sin(age * 9) * .006) * dt; if (rng() < dt / 4) e.dir *= -1; break;
+      case 'rocket': e.y -= e.v * dt; e.x += e.tilt * e.v * dt; e.smoke.push({ x: e.x, y: e.y, a: 1 }); if (e.smoke.length > 40) e.smoke.shift(); for (const p of e.smoke) p.a -= dt * .5; break;
       default: e.x += e.dir * e.v * dt;
     }
     if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);

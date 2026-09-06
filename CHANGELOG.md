@@ -1,5 +1,13 @@
 # Journal des versions
 
+## 1.2.0 — 2026-09-06 · « Foule »
+
+- Timecode discret en bas à gauche : position et durée, en petit, avec un halo, masqué quand la console est ouverte.
+- Huit passages de plus : drones à feux clignotants, patrouilles de trois chasseurs avec postcombustion, fusées qui décollent derrière les montagnes avec flamme et fumée, feux d'artifice la nuit, familles de canards, dauphins qui sautent, serpent de mer à bosses, périscope et son sillage. Vingt-neuf types au total.
+- Nuages redessinés : bourgeons modelés par des dégradés, ombre portée, base plate de cumulus. Chaque nuage est rendu une fois dans un sprite par éclairage et réutilisé, ce qui coûte moins qu'avant.
+- Étoiles de tailles et de teintes variées.
+- Modules dédiés pour les nuages et le timecode, quatre tests de plus.
+
 ## 1.1.2 — 2026-09-06 · « Onde large »
 
 - La forme d'onde prend toute la largeur de l'écran, avec un trait plus épais, un dégradé horizontal dans la palette du moment et une lueur douce.
