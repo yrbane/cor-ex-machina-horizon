@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 1.0.3 — 2026-09-06 · « Halo »
+
+- Le halo de la lune suit le croissant : il s'efface progressivement côté ombre au lieu de dessiner un trou rond dans la lueur.
+
 ## 1.0.2 — 2026-09-06 · « Croissant »
 
 - La lune est dessinée sur un calque transparent : sa partie dans l'ombre est effacée au lieu d'être peinte en noir. Le ciel passe à travers, sans contour ni halo côté ombre, avec un terminateur adouci.

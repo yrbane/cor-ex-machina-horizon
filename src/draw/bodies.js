@@ -74,6 +74,9 @@ function drawMoon(ctx, x, y, r, n, low, sky, pulse, hue, makeLayer) {
     g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');                                             // terminateur adouci
     c.fillStyle = 'rgba(0,0,0,1)'; c.beginPath(); c.arc(sx, sy, sr * .93, 0, TAU); c.fill();
     c.fillStyle = g; c.beginPath(); c.arc(sx, sy, sr, 0, TAU); c.fill();
+    // Le halo suit le croissant : effacé progressivement côté ombre, pour ne pas dessiner un trou rond dans la lueur
+    const gh = c.createRadialGradient(sx, sy, sr, sx, sy, hr); gh.addColorStop(0, 'rgba(0,0,0,1)'); gh.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = gh; c.beginPath(); c.arc(sx, sy, hr, 0, TAU); c.fill();
     c.globalCompositeOperation = 'source-over';
   }
   ctx.globalCompositeOperation = 'source-over';

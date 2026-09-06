@@ -69,6 +69,8 @@ test('la partie sombre de la lune est effacée, pas peinte en noir : le ciel pas
   const layer = make.made[0];
   assert.ok(layer.setValues('globalCompositeOperation').includes('destination-out'), 'ombre par effacement');
   assert.ok(!layer.setValues('fillStyle').some(v => typeof v === 'string' && v.startsWith('rgba(8,10,20')), 'aucun disque noir');
+  const idx = layer.calls.findIndex(c => c[0] === 'set:globalCompositeOperation' && c[1] === 'destination-out');
+  assert.ok(layer.calls.slice(idx).filter(c => c[0] === 'fill').length >= 3, 'disque, terminateur adouci, et halo effacé côté ombre');
   const make2 = layerFactory(); drawBody(fakeCtx(), { kind: 'moon', x: 300, y: 200, r: 30, n: 2, alt: .2 }, full, .3, { dark: 0 }, 5, 0, make2);
   assert.ok(!make2.made[0].setValues('globalCompositeOperation').includes('destination-out'), 'pleine lune : rien à effacer');
 });
