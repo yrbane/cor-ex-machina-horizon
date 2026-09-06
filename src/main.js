@@ -13,19 +13,21 @@ import { Console } from './draw/console.js';
 import { RingWaveSource, EnvelopeWaveSource, WaveformStrip } from './waveform.js';
 import { CloudSprites, makeCloud, drawCloud } from './draw/clouds.js';
 import { drawHud } from './hud.js';
+import { LiveAnalysis } from './live-analysis.js';
+import { Playlist, trackName } from './playlist.js';
+import { PlaylistPanel } from './playlist-panel.js';
 
 // Câblage de la page : audio, analyse, boucle de rendu, interactions, console
 const DATA = JSON.parse(document.getElementById('data').textContent);
-const A = new Analysis(DATA), DUR = A.duration;
+const SET = new Analysis(DATA), LIVE = new LiveAnalysis(.5); let A = SET;   // A : analyse de la piste courante
+const dur = () => (isFinite(audio.duration) && audio.duration > 0) ? audio.duration : (A === SET ? SET.duration : Math.max(LIVE.duration, 1));
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const now = () => performance.now() / 1000;
 const rng = Math.random;
 
 // --- audio et analyse temps réel
-const audio = document.getElementById('audio'), fileIn = document.getElementById('file');
+const audio = document.getElementById('audio');
 let audioFailed = false, actx = null, analyser = null, freq = null, silentSince = 0, live = false;
-audio.addEventListener('error', () => { audioFailed = true; });
-fileIn.addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; stopAnalyser(); audio.src = URL.createObjectURL(f); audioFailed = false; audio.addEventListener('canplay', () => { audio.play(); startAnalyser(); }, { once: true }); });
 const HZ = { sub: [20, 60], bass: [60, 250], mid: [250, 2000], high: [2000, 16000] };
 const range = Object.fromEntries(BANDS.map(b => [b, { lo: -70, hi: -30 }]));
 const NSPEC = 48, spec = new Float32Array(NSPEC), specRange = { lo: -80, hi: -30 };
@@ -39,7 +41,6 @@ function startAnalyser() {
     freq = new Float32Array(analyser.frequencyBinCount); silentSince = now();
   } catch (e) { actx = null; }
 }
-function stopAnalyser() { if (actx) { actx.close(); actx = null; analyser = null; live = false; } }
 function analyse() {
   if (!analyser) return null;
   analyser.getFloatFrequencyData(freq);
@@ -51,17 +52,19 @@ function analyse() {
     r.hi = Math.max(v, r.hi - .03); r.lo = Math.min(v, r.lo + .03); if (r.hi - r.lo < 14) r.hi = r.lo + 14;
     out[b] = clamp((v - r.lo) / (r.hi - r.lo), 0, 1);
   }
-  let e = 0; for (let i = Math.floor(30 / res); i < Math.ceil(150 / res); i++) if (Number.isFinite(freq[i])) e += Math.pow(10, freq[i] / 10);
-  out.kickE = e;
+  let e = 0, tot = 0; for (let i = Math.floor(30 / res); i < Math.ceil(150 / res); i++) if (Number.isFinite(freq[i])) e += Math.pow(10, freq[i] / 10);
+  for (let i = Math.floor(40 / res); i < Math.min(freq.length, Math.ceil(12000 / res)); i++) if (Number.isFinite(freq[i])) tot += Math.pow(10, freq[i] / 10);
+  out.kickE = e; out.loud = tot > 0 ? 10 * Math.log10(tot) : -90;   // loudness approchée, en dB relatifs
   if (finite) {
     silentSince = now(); let lo = 40;
     analyser.getFloatTimeDomainData(timeBuf); liveWave.push(timeBuf);
+    let pk = 0; for (let i = 0; i < timeBuf.length; i++) pk = Math.max(pk, Math.abs(timeBuf[i])); out.peak = 20 * Math.log10(pk + 1e-6);
     for (let i = 0; i < NSPEC; i++) { const hi = 40 * Math.pow(300, (i + 1) / NSPEC); let s = 0, n = 0; for (let j = Math.max(1, Math.floor(lo / res)); j <= Math.max(Math.floor(lo / res) + 1, Math.floor(hi / res)); j++) if (j < freq.length && Number.isFinite(freq[j])) { s += freq[j]; n++; } const v = n ? s / n : -120; specRange.hi = Math.max(v, specRange.hi - .02); specRange.lo = Math.min(v, specRange.lo + .02); spec[i] = clamp((v - specRange.lo) / Math.max(20, specRange.hi - specRange.lo), 0, 1); lo = hi; }
   }
   live = finite || now() - silentSince < 1.5;
   return live ? out : null;
 }
-const kickDet = new KickDetector(), dataKick = new DataKick(A);
+const kickDet = new KickDetector(); let dataKick = new DataKick(A);
 // Forme d'onde du premier plan : signal en direct quand la page y a accès, enveloppe précalculée sinon
 const liveWave = new RingWaveSource(900, 30), timeBuf = new Float32Array(2048);
 const waveStrip = new WaveformStrip(liveWave, new EnvelopeWaveSource(A, 3), 240);
@@ -96,7 +99,7 @@ const disp = { sub: 0, bass: 0, mid: 0, high: 0 };
 const follow = (c, tgt, up, down) => c + (tgt - c) * (tgt > c ? up : down);
 const waves = [], events = [], lightning = new Lightning();
 let curW = { w: 'clear', k: 0, dark: 0, rainbow: 0 }, curSky = skyState(0), curSrc = null;
-const layers = makeLayers(A.S, A.step);
+let layers = makeLayers(A.S, A.step), layersN = A.S.length;
 const stars = Array.from({ length: 110 }, () => ({ x: rng(), y: rng() * .6, s: .5 + rng() * rng() * 2.2, p: rng() * TAU, col: rng() < .12 ? '190,210,255' : rng() < .2 ? '255,225,190' : '234,231,221' }));
 const streaks = Array.from({ length: 36 }, () => ({ x: rng(), y: .1 + rng() * .7, v: .3 + rng() * .7, len: .02 + rng() * .06, band: BANDS[1 + Math.floor(rng() * 3)] }));
 const clouds = Array.from({ length: 9 }, () => makeCloud(rng)).sort((a, b) => a.depth - b.depth);
@@ -112,14 +115,14 @@ function frame() {
   const t = audio.currentTime || 0, playing = started && !audio.paused;
   const horizon = H * .74, parX = mouseX - .5, parY = mouseY - .5, wTop = horizon + H * .06;
   let b = playing ? analyse() : null, kick = 0;
-  if (b) kick = kickDet.feed(b.kickE, tn);
+  if (b) { kick = kickDet.feed(b.kickE, tn); if (A === LIVE) { LIVE.feed(t, { loud: b.loud, peak: b.peak, sub: b.sub, bass: b.bass, mid: b.mid, high: b.high }); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } } }
   else { b = playing ? A.bandsAt(t) : { sub: 0, bass: 0, mid: 0, high: 0 }; if (playing) kick = dataKick.at(t); if (!live) for (let i = 0; i < NSPEC; i++) { const x = i / (NSPEC - 1) * 3, k = Math.floor(x), f = x - k, a0 = b[BANDS[Math.min(3, k)]], a1 = b[BANDS[Math.min(3, k + 1)]]; spec[i] = (a0 + (a1 - a0) * f) * (.6 + .4 * Math.sin(tn * 2.3 + i * .55)); } }
   if (kick) onKick(kick, horizon);
   for (const k of BANDS) disp[k] = follow(disp[k], b[k], .5, .07);
   if (tn - lastBandSample > .25) { lastBandSample = tn; stats.bandHist.push([disp.sub, disp.bass, disp.mid, disp.high]); if (stats.bandHist.length > 240) stats.bandHist.shift(); }
   hue += (hueTarget - hue) * .05 + dt * 3; hueTarget += dt * 3;
   kickFlash *= Math.exp(-dt * 8); jumpFlash *= Math.exp(-dt * 4);
-  const lvl = playing ? LUF(A.at(A.S, t)) : .3;
+  const lvl = playing ? A.levelAt(t) : .3;
   const sky = skyState(t), wx = weatherAt(t); curW = wx; curSky = sky; geo.horizon = horizon; geo.parX = parX; geo.wTop = wTop;
   const wind = REDUCED ? 0 : (.004 + lvl * .012) * (wx.w === 'storm' ? 2.5 : wx.w === 'rain' ? 1.6 : 1);
   if (playing) { const before = events.length; tickEvents(events, dt, sky, wind, wx, rng, tn); for (const e of events.slice(before)) stats.spawned[e.type] = (stats.spawned[e.type] || 0) + 1; }
@@ -174,24 +177,41 @@ function frame() {
   if (kickFlash > .02) { ctx.fillStyle = `rgba(255,240,220,${kickFlash * .08})`; ctx.fillRect(0, 0, W, H); }
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, Math.hypot(W, H) / 2); vg.addColorStop(0, 'rgba(6,7,12,0)'); vg.addColorStop(1, `rgba(6,7,12,${lerp(.6, .35, sky.day)})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   if (!started) { const p = .5 + .5 * Math.sin(tn * 1.2); ctx.strokeStyle = `rgba(234,231,221,${.25 + p * .4})`; ctx.lineWidth = 2; ctx.beginPath(); if (src && srcVis > .5) ctx.arc(src.x, src.y, src.r * 1.6 + p * 4, 0, TAU); else ctx.arc(W / 2, H / 2, 5 + p * 5, 0, TAU); ctx.stroke(); }
-  if (started && konsole.hidden) drawHud(ctx, t, DUR, { W, H }, .5);
-  document.body.classList.toggle('hidecursor', playing && tn - idleT > 2 && konsole.hidden);
+  if (started && konsole.hidden) drawHud(ctx, t, dur(), { W, H }, .5);
+  document.body.classList.toggle('hidecursor', playing && tn - idleT > 2 && konsole.hidden && plPanel.hidden);
   adapt(performance.now() - w0);
-  if (!konsole.hidden && tn - konsole.last > .25) { konsole.last = tn; konsole.render({ t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap: FPS_CAP }); }
+  if (!konsole.hidden && tn - konsole.last > .25) { konsole.last = tn; konsole.render({ t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap: FPS_CAP, track: playlist.current && playlist.current.name, dur: dur() }); }
   requestAnimationFrame(frame);
 }
 
 // --- console et interactions
-const konsole = new Console(document, A, stats, {});
+const konsole = new Console(document, () => A, stats, {});
+// --- playlist : le set en tête, les pistes distantes retenues d'une visite à l'autre
+const playlist = new Playlist();
+playlist.add({ name: trackName(audio.getAttribute('src')), src: audio.getAttribute('src'), isSet: true });
+try { playlist.load(JSON.parse(localStorage.getItem('horizon.playlist') || '[]')); } catch (e) { /* stockage indisponible : la liste reste en mémoire */ }
+const savePl = () => { try { localStorage.setItem('horizon.playlist', JSON.stringify(playlist.toJSON())); } catch (e) { /* idem */ } };
+function playTrack(track, retryWithoutCors) {
+  if (!track) return;
+  A = track.isSet ? SET : LIVE; if (!track.isSet) LIVE.reset();
+  layers = makeLayers(A.S, A.step); layersN = A.S.length; dataKick = new DataKick(A); waveStrip.env = new EnvelopeWaveSource(A, 3); liveWave.reset(); events.length = 0;
+  const remote = /^https?:/i.test(track.src);
+  if (remote && !retryWithoutCors) audio.crossOrigin = 'anonymous'; else audio.removeAttribute('crossorigin');   // l'analyse exige CORS ; sinon on lit sans analyser
+  audioFailed = false; audio.src = track.src; started = true; audio.play().then(startAnalyser).catch(() => {});
+  plPanel.refresh();
+}
+audio.addEventListener('error', () => { const tr = playlist.current; if (tr && audio.getAttribute('crossorigin') && /^https?:/i.test(tr.src)) { playTrack(tr, true); return; } audioFailed = true; });
+audio.addEventListener('ended', () => { if (playlist.length > 1) playTrack(playlist.next()); });
+const plPanel = new PlaylistPanel(document, playlist, { onPlay: tr => playTrack(tr), onChange: savePl, fetchText: async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); return r.text(); } });
 document.getElementById('closeBtn').addEventListener('click', e => { e.stopPropagation(); konsole.toggle(false); });
 konsole.el.addEventListener('click', e => e.stopPropagation());
 konsole.el.addEventListener('dblclick', e => e.stopPropagation());
 function toggle() {
-  if (audioFailed) { fileIn.click(); return; }
+  if (audioFailed) { plPanel.toggle(true); return; }
   if (!started) { started = true; audio.play().then(startAnalyser).catch(() => {}); return; }
   if (audio.paused) { audio.play(); if (actx) actx.resume(); } else audio.pause();
 }
-const seekTo = tt => { audio.currentTime = clamp(tt, 0, DUR); jumpFlash = 1; idleT = now(); };
+const seekTo = tt => { audio.currentTime = clamp(tt, 0, dur()); jumpFlash = 1; idleT = now(); };
 let clickTimer;
 document.addEventListener('click', e => {
   clearTimeout(clickTimer);
@@ -199,10 +219,13 @@ document.addEventListener('click', e => {
   clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp })); }, 220);
 });
 document.addEventListener('dblclick', () => { clearTimeout(clickTimer); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); });
-addEventListener('wheel', e => { if (konsole.el.contains(e.target)) return; e.preventDefault(); if (started) seekTo(audio.currentTime + e.deltaY * (e.shiftKey ? .6 : .06)); }, { passive: false });
+addEventListener('wheel', e => { if (konsole.el.contains(e.target) || plPanel.el.contains(e.target)) return; e.preventDefault(); if (started) seekTo(audio.currentTime + e.deltaY * (e.shiftKey ? .6 : .06)); }, { passive: false });
 document.addEventListener('keydown', e => {
   if (e.key === '?' || (e.key === 'h' && !e.ctrlKey)) { e.preventDefault(); konsole.toggle(); return; }
-  if (e.key === 'Escape') { konsole.toggle(false); return; }
+  if (e.key === 'p') { e.preventDefault(); plPanel.toggle(); return; }
+  if (e.key === 'n') { playTrack(playlist.next()); return; }
+  if (e.key === 'b') { playTrack(playlist.prev()); return; }
+  if (e.key === 'Escape') { konsole.toggle(false); plPanel.toggle(false); return; }
   if (e.code === 'Space') { e.preventDefault(); toggle(); }
   else if (e.key === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
   else if (e.key === 'ArrowRight') seekTo(audio.currentTime + (e.shiftKey ? 60 : 10));
@@ -210,10 +233,10 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'PageDown') seekTo(audio.currentTime + 300);
   else if (e.key === 'PageUp') seekTo(audio.currentTime - 300);
   else if (e.key === 'Home') seekTo(0);
-  else if (e.key === 'End') seekTo(DUR - 5);
-  else if (e.key === 'o') fileIn.click();
+  else if (e.key === 'End') seekTo(dur() - 5);
+  else if (e.key === 'o') document.getElementById('plFiles').click();
   idleT = now();
 });
 document.addEventListener('touchstart', () => { idleT = now(); }, { passive: true });
-if (location.search.includes('test')) window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; };
+if (location.search.includes('test')) { window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; }; window.__feedLive = (t, smp) => { LIVE.feed(t, smp); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }; window.__state = () => ({ live: A === LIVE, tracks: playlist.tracks.map(t => t.name), index: playlist.index, src: audio.currentSrc }); }
 requestAnimationFrame(frame);

@@ -1,5 +1,13 @@
 # Journal des versions
 
+## 1.3.0 — 2026-09-06 · « Playlist »
+
+- Playlist sur la touche <kbd>p</kbd> : ajout de fichiers, d'un dossier local, d'une URL de fichier audio ou d'un dossier servi en HTTP dont l'index est lu. Piste suivante et précédente avec <kbd>n</kbd> et <kbd>b</kbd>, enchaînement automatique, pistes distantes retenues d'une visite à l'autre.
+- Pour toute piste autre que le set, le paysage se construit en direct à l'écoute : une analyse est accumulée à mesure, les plans se dressent derrière l'instant présent, l'avenir reste vide. La console suit la piste courante.
+- Correction : ajouter un fichier avec <kbd>o</kbd> recréait le graphe audio, ce qui échouait ; le graphe est maintenant créé une seule fois.
+- Nuages en aplats : corps, ombre plate dans la moitié basse, rehaut plat, base de cumulus, sans dégradé.
+- Modules playlist, panneau de playlist et analyse en direct, neuf tests de plus.
+
 ## 1.2.2 — 2026-09-06 · « Gerbes »
 
 - Feux d'artifice plus grands, plus longs, avec lueur d'ensemble, traînées épaisses et cœur blanc sur chaque étincelle.

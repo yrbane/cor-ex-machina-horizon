@@ -20,6 +20,8 @@ export class Analysis {
   }
   norm(b, v) { const [lo, hi] = this.range[b]; return clamp((v - lo) / (hi - lo), 0, 1); }
   bandsAt(t) { return Object.fromEntries(BANDS.map(b => [b, this.norm(b, this.at(this.bands[b], t))])); }
+  // Niveau 0…1 : -30…-6 LUFS
+  levelAt(t) { return clamp((this.at(this.S, t) + 30) / 24, 0, 1); }
 }
 
 // Détection des coups de sub sur l'énergie basse en temps réel : bouffée au-dessus de la moyenne glissante, temps mort

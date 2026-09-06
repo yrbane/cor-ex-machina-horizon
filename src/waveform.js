@@ -7,6 +7,7 @@ import { drawWaveform } from './draw/waveform.js';
 export class RingWaveSource {
   constructor(size = 900, perBlock = 30) { this.buf = new Float32Array(size); this.size = size; this.perBlock = perBlock; this.head = 0; this.count = 0; }
   get ready() { return this.count >= this.size / 3; }
+  reset() { this.head = 0; this.count = 0; this.buf.fill(0); }
   push(samples) {
     const g = Math.max(1, Math.floor(samples.length / this.perBlock));
     for (let b = 0; b < this.perBlock; b++) {

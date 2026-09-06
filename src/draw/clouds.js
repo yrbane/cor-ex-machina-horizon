@@ -19,17 +19,17 @@ export class CloudSprites {
     if (cloud.key === key && cloud.sprite) return cloud.sprite;
     const s = px, pad = s * .6, w = Math.ceil(s * 2.4), h = Math.ceil(s * 1.6), L = this.make(w, h), c = L.ctx, cx = w / 2, cy = h * .62;
     const col = (dl, a) => `hsla(${light.hue},${light.sat}%,${Math.max(0, Math.min(100, light.l + dl))}%,${a})`;
-    // Ombre portée sous le nuage
-    c.fillStyle = col(-18, light.a * .5); c.beginPath(); for (const p of cloud.parts) c.ellipse(cx + p.dx * s, cy + p.dy * s + s * .16, p.r * s * .46, p.r * s * .32, 0, 0, TAU); c.fill();
-    // Corps : chaque bourgeon éclairé par le haut à gauche, ombré vers le bas
-    for (const p of cloud.parts) {
-      const bx = cx + p.dx * s, by = cy + p.dy * s, br = p.r * s * .45;
-      const g = c.createRadialGradient(bx - br * .35, by - br * .4, br * .1, bx, by, br);
-      g.addColorStop(0, col(10, light.a)); g.addColorStop(.6, col(0, light.a)); g.addColorStop(1, col(-14, light.a * .95));
-      c.fillStyle = g; c.beginPath(); c.arc(bx, by, br, 0, TAU); c.fill();
+    // Aplats, sans dégradé : corps, ombre plate dans la moitié basse de chaque bourgeon, rehaut plat en haut à gauche
+    const puffs = cloud.parts.map(p => ({ x: cx + p.dx * s, y: cy + p.dy * s, r: p.r * s * .45 }));
+    c.fillStyle = col(-16, light.a * .55); c.beginPath(); for (const p of puffs) c.ellipse(p.x, p.y + s * .14, p.r * 1.02, p.r * .55, 0, 0, TAU); c.fill();   // ombre portée
+    c.fillStyle = col(0, light.a); c.beginPath(); for (const p of puffs) { c.moveTo(p.x + p.r, p.y); c.arc(p.x, p.y, p.r, 0, TAU); } c.fill();                  // corps, en une seule forme
+    for (const p of puffs) {                                                                                                                                // ombre plate, moitié basse
+      c.save(); c.beginPath(); c.arc(p.x, p.y, p.r, 0, TAU); c.clip();
+      c.fillStyle = col(-11, light.a * .9); c.beginPath(); c.ellipse(p.x + p.r * .1, p.y + p.r * .55, p.r * 1.1, p.r * .6, 0, 0, TAU); c.fill();
+      c.fillStyle = col(8, light.a * .8); c.beginPath(); c.arc(p.x - p.r * .35, p.y - p.r * .4, p.r * .38, 0, TAU); c.fill();                            // rehaut plat
+      c.restore();
     }
-    // Base plate légèrement plus sombre, comme un cumulus
-    c.fillStyle = col(-8, light.a * .9); c.beginPath(); c.ellipse(cx, cy + s * .12, s * .95, s * .16, 0, 0, TAU); c.fill();
+    c.fillStyle = col(-7, light.a * .9); c.beginPath(); c.ellipse(cx, cy + s * .12, s * .95, s * .14, 0, 0, TAU); c.fill();                                 // base plate de cumulus
     cloud.key = key; cloud.sprite = L; void pad;
     return L;
   }

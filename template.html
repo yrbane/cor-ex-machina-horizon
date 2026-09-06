@@ -34,6 +34,22 @@
   #console th, #console td { text-align: right; padding: .25rem .4rem; border-bottom: 1px solid var(--line); }
   #console th:first-child, #console td:first-child { text-align: left; }
   #console th { color: var(--ink-2); font-weight: 500; }
+  #playlist { position: fixed; top: 3vh; right: 3vw; width: min(34rem, 94vw); max-height: 94vh; z-index: 11; overflow: auto; border-radius: 16px; padding: 1.2rem 1.4rem; cursor: default;
+    background: rgba(10,12,22,.5); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  #playlist[hidden] { display: none; }
+  #playlist h1 { font-size: 1.05rem; font-weight: 600; margin: 0 0 .6rem; }
+  #playlist ol { list-style: none; margin: 0 0 .8rem; padding: 0; max-height: 40vh; overflow: auto; }
+  #playlist li { display: flex; align-items: center; gap: .4rem; border-top: 1px solid var(--line); }
+  #playlist li button { font: inherit; color: var(--ink-2); background: transparent; border: 0; padding: .45rem .3rem; text-align: left; flex: 1; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #playlist li.current button { color: var(--ink); font-weight: 500; }
+  #playlist li button.rm { flex: 0; color: var(--ink-3); font-size: 1.1rem; padding: .2rem .5rem; }
+  #playlist li button:hover { color: var(--ink); }
+  .plRow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .5rem; }
+  .plRow label, .plRow button { font: inherit; color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: .35em .9em; background: transparent; cursor: pointer; font-size: .9rem; }
+  .plRow label:hover, .plRow button:hover { border-color: var(--ink-2); }
+  .plRow input[type=text] { font: inherit; flex: 1; min-width: 12rem; color: var(--ink); background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 8px; padding: .35em .6em; }
+  #plMsg { color: var(--ink-2); font-size: .85rem; margin: .5rem 0 0; min-height: 1.2em; }
+  #playlist p.help { color: var(--ink-3); font-size: .8rem; margin: .6rem 0 0; line-height: 1.4; }
   .close { position: absolute; top: .9rem; right: 1.1rem; color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: .2em .8em; background: transparent; font: inherit; cursor: pointer; }
 </style>
 </head>
@@ -52,7 +68,7 @@
         <li><kbd>clic</kbd> dans l'eau : lecture ou pause. <kbd>clic</kbd> sur le paysage ou le ciel : saute au temps visé, à l'échelle du plan touché.</li>
         <li><kbd>molette</kbd> : avance ou recule. Avec <kbd>Maj</kbd>, dix fois plus vite.</li>
         <li><kbd>←</kbd> <kbd>→</kbd> : 10 s. Avec <kbd>Maj</kbd> : 1 min. <kbd>Page ↑</kbd> <kbd>Page ↓</kbd> : 5 min. <kbd>Début</kbd> <kbd>Fin</kbd>.</li>
-        <li><kbd>espace</kbd> : lecture ou pause. <kbd>f</kbd> ou double clic : plein écran. <kbd>o</kbd> : charger un autre fichier audio. <kbd>?</kbd> : cette console.</li>
+        <li><kbd>espace</kbd> : lecture ou pause. <kbd>f</kbd> ou double clic : plein écran. <kbd>p</kbd> : playlist, <kbd>n</kbd> et <kbd>b</kbd> : piste suivante et précédente. <kbd>o</kbd> : ajouter des fichiers. <kbd>?</kbd> : cette console.</li>
       </ul>
       <h2>Ce que montre le paysage</h2>
       <ul>
@@ -87,6 +103,22 @@
       <table id="segments"></table>
     </section>
   </div>
+</aside>
+<aside id="playlist" hidden>
+  <button class="close" id="plClose">Fermer (Échap)</button>
+  <h1>Playlist</h1>
+  <ol id="plList"></ol>
+  <div class="plRow">
+    <label for="plFiles">Ajouter des fichiers</label><input type="file" id="plFiles" accept="audio/*" multiple>
+    <label for="plFolder">Ajouter un dossier</label><input type="file" id="plFolder" webkitdirectory directory multiple>
+    <button id="plClear">Vider</button>
+  </div>
+  <div class="plRow">
+    <input type="text" id="plUrl" placeholder="URL d'un fichier audio ou d'un dossier servi en HTTP" spellcheck="false">
+    <button id="plAddUrl">Ajouter l'URL</button>
+  </div>
+  <p id="plMsg"></p>
+  <p class="help">Le set garde son paysage précalculé. Pour tout autre morceau, le paysage se construit en direct à mesure de l'écoute : le passé à gauche, l'avenir encore vide à droite. <kbd>n</kbd> piste suivante, <kbd>b</kbd> précédente, <kbd>p</kbd> ouvre ou ferme ce panneau.</p>
 </aside>
 <script type="application/json" id="data">__DATA__</script>
 <script>

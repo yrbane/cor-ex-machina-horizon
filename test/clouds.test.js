@@ -28,5 +28,6 @@ test('CloudSprites rend un nuage une fois par clé et le réutilise ensuite', ()
   assert.equal(made, 1); assert.equal(a, b);
   sprites.get(cloud, { ...light, l: 30 }, 200);
   assert.equal(made, 2, 'nouvel éclairage : nouveau rendu');
-  assert.ok(a.ctx.count('createRadialGradient') >= cloud.parts.length, 'chaque bourgeon est modelé par un dégradé');
+  assert.equal(a.ctx.count('createRadialGradient') + a.ctx.count('createLinearGradient'), 0, 'aucun dégradé : des aplats');
+  assert.ok(a.ctx.count('fill') >= cloud.parts.length * 2, 'chaque bourgeon a son aplat et son ombre plate');
 });
