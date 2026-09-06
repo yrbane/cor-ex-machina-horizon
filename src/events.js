@@ -91,7 +91,7 @@ export function spawn(type, rng, tn) {
     case 'drone': Object.assign(e, { y: rnd(rng, .3, .6), v: rnd(rng, .025, .045), size: rnd(rng, .8, 1.2) }); break;
     case 'jets': Object.assign(e, { y: rnd(rng, .08, .3), v: rnd(rng, .11, .15), size: rnd(rng, .9, 1.2), n: 3 }); break;
     case 'rocket': Object.assign(e, { x: rnd(rng, .2, .8), y: .98, v: rnd(rng, .035, .05), tilt: rnd(rng, -.15, .15), size: rnd(rng, .9, 1.3), smoke: [] }); break;
-    case 'fireworks': Object.assign(e, { x: rnd(rng, .15, .85), y: rnd(rng, .08, .35), life: 0, ttl: rnd(rng, 1.6, 2.4), col: pick(rng, PALETTE), col2: pick(rng, PALETTE), n: 18 + Math.floor(rng() * 14) }); break;
+    case 'fireworks': Object.assign(e, { x: rnd(rng, .15, .85), y: rnd(rng, .08, .35), life: 0, ttl: rnd(rng, 2.6, 3.6), col: pick(rng, PALETTE), col2: pick(rng, PALETTE), n: 24 + Math.floor(rng() * 16) }); break;
     case 'ducks': Object.assign(e, { d: rnd(rng, .3, .8), v: rnd(rng, .004, .007), n: 3 + Math.floor(rng() * 3) }); break;
     case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
     case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
@@ -124,7 +124,7 @@ export function tickEvents(list, dt, sky, wind, weather, rng, tn) {
       case 'bat': e.x += e.dir * e.v * dt * (.6 + Math.abs(Math.sin(age * 4))); e.y = clamp(e.y + Math.sin(age * 7 + e.ph) * .15 * dt + Math.cos(age * 2.3) * .05 * dt, .1, .6); break;
       case 'butterflies': e.x += e.dir * e.v * dt; e.y += Math.sin(age * 2 + e.ph) * .02 * dt; break;
       case 'drone': e.x += e.dir * e.v * dt; e.y += (Math.sin(age * 2.7 + e.ph) * .03 + Math.sin(age * 9) * .006) * dt; if (rng() < dt / 4) e.dir *= -1; break;
-      case 'rocket': e.y -= e.v * dt; e.x += e.tilt * e.v * dt; e.smoke.push({ x: e.x, y: e.y, a: 1 }); if (e.smoke.length > 40) e.smoke.shift(); for (const p of e.smoke) p.a -= dt * .5; break;
+      case 'rocket': e.y -= e.v * dt; e.x += e.tilt * e.v * dt; if (tn - (e.lastSmoke || 0) > .12) { e.lastSmoke = tn; e.smoke.push({ x: e.x, y: e.y, a: 1 }); if (e.smoke.length > 24) e.smoke.shift(); } for (const p of e.smoke) p.a -= dt * .35; break;
       default: e.x += e.dir * e.v * dt;
     }
     if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);

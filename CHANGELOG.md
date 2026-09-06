@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.2.2 — 2026-09-06 · « Gerbes »
+
+- Feux d'artifice plus grands, plus longs, avec lueur d'ensemble, traînées épaisses et cœur blanc sur chaque étincelle.
+- Fumée de la fusée émise par bouffées espacées, qui se dissipe.
+
 ## 1.2.1 — 2026-09-06 · « Feux »
 
 - Les feux d'artifice éclatent devant les nuages, pas derrière.

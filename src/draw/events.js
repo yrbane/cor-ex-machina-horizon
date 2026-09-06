@@ -296,14 +296,16 @@ const DRAW = {
   },
 
   fireworks(ctx, e, c) {
-    const f = e.life / e.ttl, { x, y } = c, ease = 1 - Math.pow(1 - f, 3), r = c.H * .14 * ease, fade = 1 - f;
+    const f = e.life / e.ttl, { x, y } = c, ease = 1 - Math.pow(1 - f, 3), r = c.H * .22 * ease, fade = Math.pow(1 - f, .7);
     ctx.globalCompositeOperation = 'lighter';
-    if (f < .12) { ctx.fillStyle = `rgba(255,255,255,${(1 - f / .12) * .6})`; ctx.beginPath(); ctx.arc(x, y, c.H * .03, 0, TAU); ctx.fill(); }
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 1.1 + c.H * .02); glow.addColorStop(0, `rgba(255,240,220,${.35 * fade * (f < .15 ? 1 : .4)})`); glow.addColorStop(1, 'rgba(255,240,220,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, y, r * 1.1 + c.H * .02, 0, TAU); ctx.fill();                                   // lueur d'ensemble
     for (let i = 0; i < e.n; i++) {
-      const a = i / e.n * TAU + hash(i + e.ph) * .3, rr = r * (.85 + hash(i + 7) * .3), drop = f * f * c.H * .08;
+      const a = i / e.n * TAU + hash(i + e.ph) * .3, rr = r * (.8 + hash(i + 7) * .35), drop = f * f * c.H * .12;
       const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr + drop, col = i % 2 ? e.col : e.col2;
-      ctx.strokeStyle = col; ctx.globalAlpha = fade * .5; ctx.lineWidth = Math.max(1, c.H * .003); ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * rr * .7, y + Math.sin(a) * rr * .7 + drop * .6); ctx.lineTo(px, py); ctx.stroke();
-      ctx.fillStyle = col; ctx.globalAlpha = fade * (.6 + .4 * Math.sin(c.tn * 20 + i)); ctx.beginPath(); ctx.arc(px, py, Math.max(1, c.H * .004), 0, TAU); ctx.fill();
+      ctx.strokeStyle = col; ctx.globalAlpha = fade * .7; ctx.lineWidth = Math.max(1.5, c.H * .005); ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * rr * .55, y + Math.sin(a) * rr * .55 + drop * .5); ctx.lineTo(px, py); ctx.stroke(); // traînées
+      ctx.fillStyle = col; ctx.globalAlpha = fade * (.7 + .3 * Math.sin(c.tn * 20 + i)); ctx.beginPath(); ctx.arc(px, py, Math.max(1.5, c.H * .007), 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.globalAlpha = fade * .8; ctx.beginPath(); ctx.arc(px, py, Math.max(.8, c.H * .003), 0, TAU); ctx.fill();   // cœur blanc
     }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   },
