@@ -30,12 +30,14 @@ test('RingWaveSource ne déborde jamais et garde les plus récents', () => {
   assert.ok(v.every(x => x >= .8), 'seuls les derniers blocs restent');
 });
 
-test('EnvelopeWaveSource : enveloppe symétrique autour de l’instant, amplitude qui suit la crête', () => {
+test('EnvelopeWaveSource : signal signé modulé par les crêtes, qui défile avec le temps, nul hors du set', () => {
   const a = new Analysis({ rows, meta }), s = new EnvelopeWaveSource(a, 1);   // fenêtre d'une seconde
-  const early = s.sample(10, .25), late = s.sample(10, 2.25);
-  assert.equal(early.length, 10);
-  assert.ok(early.every(v => v >= 0 && v <= 1));
-  assert.ok(late[5] > early[5], 'le set est plus fort à la fin');
+  const early = s.sample(80, .25), late = s.sample(80, 2.25), peak = v => Math.max(...v.map(Math.abs));
+  assert.equal(early.length, 80);
+  assert.ok(late.every(v => v >= -1 && v <= 1));
+  assert.ok(late.some(v => v < 0) && late.some(v => v > 0), 'signal signé, pas une barre');
+  assert.ok(peak(late) > peak(early) * 2, 'le set est plus fort à la fin');
+  assert.notDeepEqual([...s.sample(80, 2.25)], [...s.sample(80, 2.26)], 'il défile');
   assert.ok(s.sample(10, -50).every(v => v === 0), 'hors du set : rien');
   assert.equal(s.ready, true);
 });

@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 1.1.1 — 2026-09-06 · « Onde de repli »
+
+- Sans son accessible, la forme d'onde du premier plan est un signal synthétique modulé par les crêtes précalculées, qui défile en temps réel, au lieu d'une enveloppe plate.
+
 ## 1.1.0 — 2026-09-06 · « Onde »
 
 - Forme d'onde au premier plan, sur l'eau, en petit : le signal audio en direct qui défile quand la page a accès au son, l'enveloppe des crêtes précalculée sinon.

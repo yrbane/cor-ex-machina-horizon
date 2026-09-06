@@ -22,15 +22,18 @@ export class RingWaveSource {
   }
 }
 
-// Repli sans son accessible : enveloppe des crêtes précalculées sur une fenêtre centrée sur l'instant présent
+// Repli sans son accessible : un signal synthétique, somme de sinus liés au temps du morceau, modulé par les crêtes
+// précalculées. Il défile en temps réel et respire avec le set, sans prétendre être le vrai signal.
 export class EnvelopeWaveSource {
   constructor(analysis, windowSec = 3) { this.a = analysis; this.win = windowSec; }
   get ready() { return true; }
   sample(n, t) {
-    const out = new Float32Array(n), a = this.a;
+    const out = new Float32Array(n), a = this.a, TAU = Math.PI * 2;
     for (let i = 0; i < n; i++) {
       const tt = t - this.win / 2 + (i / (n - 1)) * this.win;
-      out[i] = tt >= 0 && tt <= a.duration ? clamp(Math.pow(10, a.at(a.PK, tt) / 20), 0, 1) : 0;
+      if (tt < 0 || tt > a.duration) continue;
+      const env = clamp((Math.pow(10, a.at(a.PK, tt) / 20) - .15) / .85, 0, 1);
+      out[i] = env * (.55 * Math.sin(tt * TAU * 11) + .3 * Math.sin(tt * TAU * 23.7 + 1) + .15 * Math.sin(tt * TAU * 5.3 + 2));
     }
     return out;
   }
@@ -42,6 +45,6 @@ export class WaveformStrip {
   render(ctx, box, t, hue) {
     const useLive = this.live && this.live.ready;
     const src = useLive ? this.live : this.env;
-    drawWaveform(ctx, src.sample(this.points, t), box, { mode: useLive ? 'signal' : 'envelope', hue });
+    drawWaveform(ctx, src.sample(this.points, t), box, { mode: 'signal', hue });
   }
 }
