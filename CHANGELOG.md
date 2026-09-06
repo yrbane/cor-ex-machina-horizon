@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.0.2 — 2026-09-06 · « Croissant »
+
+- La lune est dessinée sur un calque transparent : sa partie dans l'ombre est effacée au lieu d'être peinte en noir. Le ciel passe à travers, sans contour ni halo côté ombre, avec un terminateur adouci.
+- La comète, les étoiles filantes et les satellites passent derrière les nuages.
+
 ## 1.0.1 — 2026-09-06 · « Rivage »
 
 - Le ciel est peint jusqu'au bord de l'eau : plus de bande sombre entre l'horizon et l'eau quand les plans sont silencieux, au démarrage du set.

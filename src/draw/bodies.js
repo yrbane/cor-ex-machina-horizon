@@ -2,10 +2,11 @@ import { clamp, lerp, hash, TAU } from '../util.js';
 import { HUES } from '../palette.js';
 
 // Astres : taille, teinte et détails différents à chaque cycle ; plus gros et plus roux au ras de l'horizon
-export function drawBody(ctx, bd, sky, pulse, wx, hue, tn) {
+// makeLayer(w, h) fournit un calque transparent réutilisable { canvas, ctx } : la lune y est dessinée puis reportée
+export function drawBody(ctx, bd, sky, pulse, wx, hue, tn, makeLayer) {
   const { x, y, kind, n, alt } = bd, low = clamp(1 - alt / .12, 0, 1), r = bd.r * (1 + low * .22);
   if (kind === 'sun') drawSun(ctx, x, y, r, n, low, sky, pulse, wx, hue, tn);
-  else drawMoon(ctx, x, y, r, n, low, sky, pulse, hue);
+  else drawMoon(ctx, x, y, r, n, low, sky, pulse, hue, makeLayer);
   ctx.globalCompositeOperation = 'source-over';
 }
 
@@ -36,36 +37,45 @@ function drawSun(ctx, x, y, r, n, low, sky, pulse, wx, hue, tn) {
   ctx.restore();
 }
 
-function drawMoon(ctx, x, y, r, n, low, sky, pulse, hue) {
+function drawMoon(ctx, x, y, r, n, low, sky, pulse, hue, makeLayer) {
   // Teinte : pâle le plus souvent, parfois rousse, parfois bleutée, et rousse près de l'horizon
   const tint = hash(n + .91), base = tint < .15 ? [32, 55, 74] : tint < .27 ? [215, 22, 88] : [46, 9, 91];
   const hueM = lerp(base[0], 28, low * .8), satM = lerp(base[1], 60, low * .8), lM = lerp(base[2], 72, low * .6) + pulse * 6;
   const mc = (dl, a) => `hsla(${hueM},${satM}%,${lM + dl}%,${a})`;
-  ctx.globalCompositeOperation = 'lighter';
-  const hr = r * (2.2 + hash(n + .2)), halo = ctx.createRadialGradient(x, y, 0, x, y, hr);
+  // Tout se dessine sur un calque transparent centré sur la lune, halo compris
+  const hr = r * (2.2 + hash(n + .2)), size = Math.ceil(hr * 2 + 4), L = makeLayer(size, size), c = L.ctx, cx = size / 2, cy = size / 2;
+  const halo = c.createRadialGradient(cx, cy, 0, cx, cy, hr);
   halo.addColorStop(0, mc(-10, .4 + pulse * .2)); halo.addColorStop(.4, mc(-10, .1)); halo.addColorStop(1, mc(-20, 0));
-  ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x, y, hr, 0, TAU); ctx.fill();
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.save(); ctx.translate(x, y); ctx.rotate(hash(n + .4) * TAU);
-  ctx.fillStyle = mc(0, .98); ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
-  ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.clip();
+  c.fillStyle = halo; c.beginPath(); c.arc(cx, cy, hr, 0, TAU); c.fill();
+  c.save(); c.translate(cx, cy); c.rotate(hash(n + .4) * TAU);
+  c.fillStyle = mc(0, .98); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+  c.beginPath(); c.arc(0, 0, r, 0, TAU); c.clip();
   // Mers : larges taches sombres aux bords doux
   const nm = 4 + Math.floor(hash(n + .61) * 4);
   for (let i = 0; i < nm; i++) {
     const a = hash(n * 3 + i) * TAU, d = hash(n * 5 + i) * r * .7, mx = Math.cos(a) * d, my = Math.sin(a) * d, mr = r * (.14 + hash(n * 7 + i) * .22);
-    const g = ctx.createRadialGradient(mx, my, 0, mx, my, mr); g.addColorStop(0, mc(-26, .5)); g.addColorStop(.7, mc(-22, .35)); g.addColorStop(1, mc(-20, 0));
-    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(mx, my, mr * (1 + hash(n + i) * .5), mr, a, 0, TAU); ctx.fill();
+    const g = c.createRadialGradient(mx, my, 0, mx, my, mr); g.addColorStop(0, mc(-26, .5)); g.addColorStop(.7, mc(-22, .35)); g.addColorStop(1, mc(-20, 0));
+    c.fillStyle = g; c.beginPath(); c.ellipse(mx, my, mr * (1 + hash(n + i) * .5), mr, a, 0, TAU); c.fill();
   }
   // Cratères : fond ombré, bord éclairé côté soleil
   const nc = 7 + Math.floor(hash(n + .83) * 8);
   for (let i = 0; i < nc; i++) {
-    const a = hash(n * 11 + i) * TAU, d = hash(n * 13 + i) * r * .85, cx = Math.cos(a) * d, cy = Math.sin(a) * d, cr = r * (.03 + hash(n * 17 + i) * .07);
-    ctx.fillStyle = mc(-18, .45); ctx.beginPath(); ctx.arc(cx, cy, cr, 0, TAU); ctx.fill();
-    ctx.fillStyle = mc(-8, .5); ctx.beginPath(); ctx.arc(cx + cr * .25, cy - cr * .2, cr * .6, 0, TAU); ctx.fill();
-    ctx.strokeStyle = mc(8, .45); ctx.lineWidth = Math.max(.6, cr * .18); ctx.beginPath(); ctx.arc(cx, cy, cr, 3.6, 5.6); ctx.stroke();
+    const a = hash(n * 11 + i) * TAU, d = hash(n * 13 + i) * r * .85, kx = Math.cos(a) * d, ky = Math.sin(a) * d, cr = r * (.03 + hash(n * 17 + i) * .07);
+    c.fillStyle = mc(-18, .45); c.beginPath(); c.arc(kx, ky, cr, 0, TAU); c.fill();
+    c.fillStyle = mc(-8, .5); c.beginPath(); c.arc(kx + cr * .25, ky - cr * .2, cr * .6, 0, TAU); c.fill();
+    c.strokeStyle = mc(8, .45); c.lineWidth = Math.max(.6, cr * .18); c.beginPath(); c.arc(kx, ky, cr, 3.6, 5.6); c.stroke();
   }
-  ctx.restore();
-  // Phase : un disque sombre décalé masque une partie du disque, différemment à chaque cycle
+  c.restore();
+  // Phase : la partie dans l'ombre est effacée du calque, halo et contour compris ; le ciel apparaît à travers
   const ph = (sky.phase - .5) * 2, off = ph * r * 1.6;
-  if (Math.abs(ph) > .12) { ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.clip(); ctx.fillStyle = 'rgba(8,10,20,.88)'; ctx.beginPath(); ctx.arc(x + off, y - r * .15, r * 1.05, 0, TAU); ctx.fill(); ctx.restore(); }
+  if (Math.abs(ph) > .12) {
+    c.globalCompositeOperation = 'destination-out';
+    const sr = r * 1.05, sx = cx + off, sy = cy - r * .15, g = c.createRadialGradient(sx, sy, sr * .93, sx, sy, sr);
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');                                             // terminateur adouci
+    c.fillStyle = 'rgba(0,0,0,1)'; c.beginPath(); c.arc(sx, sy, sr * .93, 0, TAU); c.fill();
+    c.fillStyle = g; c.beginPath(); c.arc(sx, sy, sr, 0, TAU); c.fill();
+    c.globalCompositeOperation = 'source-over';
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(L.canvas, Math.round(x - cx), Math.round(y - cy));
 }

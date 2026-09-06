@@ -3,7 +3,7 @@ import { hsl, HUES } from './palette.js';
 import { Analysis, KickDetector, DataKick, BANDS } from './analysis.js';
 import { skyState, PERIOD, bodyVisibility } from './sky.js';
 import { weatherAt } from './weather.js';
-import { tickEvents, WATER_TYPES, spawn } from './events.js';
+import { tickEvents, WATER_TYPES, BEHIND_CLOUDS, spawn } from './events.js';
 import { drawBody } from './draw/bodies.js';
 import { makeLayers, drawLayer, timeAt } from './draw/landscape.js';
 import { drawEvent } from './draw/events.js';
@@ -62,6 +62,9 @@ const kickDet = new KickDetector(), dataKick = new DataKick(A);
 // --- rendu : 30 images/s maxi, résolution plafonnée et adaptée à la machine
 const cv = document.getElementById('c'), ctx = cv.getContext('2d', { alpha: false, desynchronized: true });
 const back = document.createElement('canvas'), bctx = back.getContext('2d');
+// Calque transparent réutilisé pour la lune : sa partie dans l'ombre y est effacée avant report sur la scène
+const moonLayer = document.createElement('canvas');
+const makeLayer = (w, h) => { if (moonLayer.width !== w || moonLayer.height !== h) { moonLayer.width = w; moonLayer.height = h; } const c = moonLayer.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.clearRect(0, 0, w, h); return { canvas: moonLayer, ctx: c }; };
 let W = 0, H = 0, Q = 1, lastDraw = 0, workAcc = 0, workN = 0, workT0 = now(), calmSince = now();
 const FPS_CAP = 30;
 const stats = { fpsHist: [], fps: 0, work: 0, kicks: 0, spawned: {}, bandHist: [], frames: 0 };
@@ -137,7 +140,7 @@ function frame() {
   const bodies = [];
   if (sky.moon.up) bodies.push({ kind: 'moon', n: sky.n, alt: sky.moon.alt, x: sky.moon.x * W - parX * W * .02, y: horizon - sky.moon.alt * H + parY * H * .015, r: rMoon });
   if (sky.sun.up) bodies.push({ kind: 'sun', n: sky.n, alt: sky.sun.alt, x: sky.sun.x * W - parX * W * .03, y: horizon - sky.sun.alt * H + parY * H * .02, r: rSun });
-  for (const bd of bodies) drawBody(ctx, bd, sky, disp.sub, wx, hue, tn);
+  for (const bd of bodies) drawBody(ctx, bd, sky, disp.sub, wx, hue, tn, makeLayer);
   const src = bodies[0]; curSrc = src; const srcVis = src ? bodyVisibility(src, horizon) : 0;
   if (src) { ctx.globalCompositeOperation = 'lighter'; for (let i = waves.length - 1; i >= 0; i--) { const w = waves[i]; w.r += dt * W * .9; w.a *= Math.exp(-dt * 2.4); if (w.a < .02) { waves.splice(i, 1); continue; } ctx.strokeStyle = hsl(hue, 'sub', 85, 70, w.a * srcVis * (src.kind === 'sun' ? 1 : .5)); ctx.lineWidth = 2 + 6 * w.a; ctx.beginPath(); ctx.arc(src.x, src.y, src.r + w.r, 0, TAU); ctx.stroke(); } } else waves.length = 0;
   ctx.restore();
@@ -145,6 +148,7 @@ function frame() {
   ctx.globalCompositeOperation = 'lighter';
   for (const s of streaks) { const e = disp[s.band]; s.x -= dt * s.v * (.04 + lvl * .25 + e * .3); if (s.x < -.1) { s.x = 1.1; s.y = .1 + rng() * .7; } const x = s.x * W, y = (s.y - parY * .05 * s.v) * horizon, len = s.len * W * (.5 + lvl + e); ctx.strokeStyle = hsl(hue, s.band, 80, 65, (.35 * e + .06) * (1 - sky.day * .7)); ctx.lineWidth = 1 + e * 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke(); }
   ctx.globalCompositeOperation = 'source-over';
+  for (const e of events) if (BEHIND_CLOUDS.includes(e.type)) drawEvent(ctx, e, scene, sky);   // ciel profond, derrière les nuages
   // Nuages, colorés par la lumière du moment
   for (const c of clouds) {
     c.x -= dt * wind * c.depth; if (c.x < -.3) { c.x = 1.3; c.y = .12 + (1 - c.depth) * .25 + rng() * .15; }
@@ -153,7 +157,7 @@ function frame() {
     ctx.fillStyle = `hsla(${hueC},${sat}%,${l}%,${.55 + c.depth * .3 + wx.dark * .2})`;
     ctx.beginPath(); for (const p of c.parts) { ctx.moveTo(cx + p.dx * s + p.r * s * .45, cy + p.dy * s); ctx.arc(cx + p.dx * s, cy + p.dy * s, p.r * s * .45, 0, TAU); } ctx.fill();
   }
-  for (const e of events) if (!WATER_TYPES.includes(e.type)) drawEvent(ctx, e, scene, sky);
+  for (const e of events) if (!WATER_TYPES.includes(e.type) && !BEHIND_CLOUDS.includes(e.type)) drawEvent(ctx, e, scene, sky);
   // Plans du paysage, brume, précipitations
   layers.forEach((L, i) => { drawLayer(ctx, L, t, scene, sky, i); if (i === 1 && wx.w === 'fog') drawFog(ctx, wx.k, horizon, W, H); });
   if (wx.w === 'rain' || wx.w === 'storm') drawRain(ctx, t, wx.k, wind, wx.w === 'storm', W, H);

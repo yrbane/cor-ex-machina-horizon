@@ -48,14 +48,29 @@ test('l’ovni a des feux multicolores qui tournent, et un dôme', () => {
   assert.ok(ctx.count('arc') >= 6, 'dôme et feux en arcs');
 });
 
+const layerFactory = () => { const made = []; const make = (w, h) => { const c = fakeCtx(); made.push(c); return { canvas: { width: w, height: h }, ctx: c }; }; make.made = made; return make; };
+
 test('la lune dessine des mers et des cratères, et le soleil des taches en plein jour', () => {
-  const ctx = fakeCtx();
-  drawBody(ctx, { kind: 'moon', x: 300, y: 200, r: 30, n: 2, alt: .2 }, night, .3, { dark: 0 }, 5, 0);
-  assert.ok(ctx.count('createRadialGradient') >= 4, 'mers en dégradés');
-  assert.ok(ctx.count('arc') >= 12, 'cratères');
+  const ctx = fakeCtx(), make = layerFactory();
+  drawBody(ctx, { kind: 'moon', x: 300, y: 200, r: 30, n: 2, alt: .2 }, night, .3, { dark: 0 }, 5, 0, make);
+  const layer = make.made[0];
+  assert.ok(layer, 'la lune passe par un calque');
+  assert.ok(layer.count('createRadialGradient') >= 4, 'mers en dégradés');
+  assert.ok(layer.count('arc') >= 12, 'cratères');
+  assert.equal(ctx.count('drawImage'), 1, 'le calque est reporté sur la scène');
   const ctx2 = fakeCtx();
-  drawBody(ctx2, { kind: 'sun', x: 300, y: 200, r: 40, n: 2, alt: .3 }, day, .3, { dark: 0 }, 5, 0);
+  drawBody(ctx2, { kind: 'sun', x: 300, y: 200, r: 40, n: 2, alt: .3 }, day, .3, { dark: 0 }, 5, 0, make);
   assert.ok(ctx2.count('ellipse') >= 4, 'taches solaires');
+});
+
+test('la partie sombre de la lune est effacée, pas peinte en noir : le ciel passe à travers, sans contour', () => {
+  const crescent = { ...night, phase: .05 }, full = { ...night, phase: .5 };
+  const make = layerFactory(); drawBody(fakeCtx(), { kind: 'moon', x: 300, y: 200, r: 30, n: 2, alt: .2 }, crescent, .3, { dark: 0 }, 5, 0, make);
+  const layer = make.made[0];
+  assert.ok(layer.setValues('globalCompositeOperation').includes('destination-out'), 'ombre par effacement');
+  assert.ok(!layer.setValues('fillStyle').some(v => typeof v === 'string' && v.startsWith('rgba(8,10,20')), 'aucun disque noir');
+  const make2 = layerFactory(); drawBody(fakeCtx(), { kind: 'moon', x: 300, y: 200, r: 30, n: 2, alt: .2 }, full, .3, { dark: 0 }, 5, 0, make2);
+  assert.ok(!make2.made[0].setValues('globalCompositeOperation').includes('destination-out'), 'pleine lune : rien à effacer');
 });
 
 test('un plan silencieux reste plat et invisible, sans trait lumineux : pas de reflet au démarrage', () => {

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES } from '../src/events.js';
+import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES, BEHIND_CLOUDS } from '../src/events.js';
 import { seeded } from './fakeCtx.js';
 
 const day = { day: 1, dusk: 0 }, night = { day: 0, dusk: 0 };
@@ -69,4 +69,10 @@ test('tickEvents fait apparaître des passages avec un taux, jamais de nuit seul
   for (let i = 0; i < 4000; i++) tickEvents(list, .5, day, .005, clear, rng, i * .5);
   assert.ok(list.length > 0, 'quelque chose est apparu');
   assert.ok(!list.some(e => TYPES[e.type].night), 'rien de nocturne en plein jour');
+});
+
+test('la comète, les étoiles filantes et les satellites passent derrière les nuages, pas les oiseaux ni les avions', () => {
+  for (const k of ['comet', 'shooting', 'satellite']) assert.ok(BEHIND_CLOUDS.includes(k), k);
+  for (const k of ['bird', 'airliner', 'ufo', 'balloon']) assert.ok(!BEHIND_CLOUDS.includes(k), k);
+  for (const k of BEHIND_CLOUDS) assert.ok(TYPES[k], k);
 });

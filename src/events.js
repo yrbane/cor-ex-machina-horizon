@@ -25,6 +25,7 @@ export const TYPES = {
   whale:       { rate: 1 / 650, label: 'baleines', single: true },
 };
 export const WATER_TYPES = ['sailboat', 'ship', 'fish', 'whale'];
+export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
 export const TRANSIENT = ['shooting', 'fish', 'whale'];
 
 // Espèces d'oiseaux : taille, cadence de battement, vitesse, ondulation, vol plané
