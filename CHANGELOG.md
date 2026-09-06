@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.5.1 — 2026-09-06 · « Réglages »
+
+- La barre de contrôles garde sa mise en page quand elle est cachée : les composants potard se mesurent correctement, le potentiomètre de volume s'affiche.
+- Script de test compatible avec Node 22 en intégration continue.
+
 ## 1.5.0 — 2026-09-06 · « Cabine »
 
 - Barre de contrôles sur <kbd>c</kbd>, construite avec les Web Components de potard (MIT, embarqués) : transport, position, volume, VU-mètre, témoin d'analyse en direct, accès à la playlist, à l'aide et au plein écran.
