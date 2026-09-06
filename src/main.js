@@ -21,6 +21,9 @@ import { SCENES, sceneById, nextSceneId, allowedTypes } from './scenes/registry.
 import { drawSky, drawBodies, drawStreaks, drawClouds } from './scenes/sky.js';
 import { renderHorizon } from './scenes/horizon.js';
 import { renderValley } from './scenes/valley.js';
+import { renderCity } from './scenes/city.js';
+import { renderSea, seaBiomeAt } from './scenes/sea.js';
+import { cityBiomeAt } from './scenes/city.js';
 
 // Câblage de la page : audio, analyse, boucle de rendu, scènes, interactions, panneaux
 defineControls();   // Web Components de potard
@@ -122,7 +125,7 @@ function setScene(id, silent) {
   syncSceneUi(); if (!silent) plPanel.announce({ name: `Scène : ${sceneById(sceneId).name}` });
 }
 function syncSceneUi() { const sel = document.getElementById('sceneSel'); if (sel) sel.value = sceneId; const auto = document.getElementById('autoScene'); if (auto) auto.checked = autoScene; if (typeof controls !== 'undefined' && controls) controls.setScene(sceneById(sceneId).name); }
-const RENDER = { horizon: renderHorizon, valley: renderValley };
+const RENDER = { horizon: renderHorizon, valley: renderValley, city: renderCity, sea: renderSea };
 // Dessins fournis aux scènes
 const D = {
   drawSky, drawBodies, drawStreaks, drawClouds, drawEvent, drawLayer, drawRain, drawSnow, drawFog, drawAurora, drawRainbow,
@@ -240,5 +243,5 @@ document.addEventListener('keydown', e => {
   idleT = now();
 });
 document.addEventListener('touchstart', () => { idleT = now(); }, { passive: true });
-if (location.search.includes('test')) { window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; }; window.__feedLive = (t, smp) => { LIVE.feed(t, smp); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }; window.__state = () => ({ live: A === LIVE, tracks: playlist.tracks.map(t => t.name), index: playlist.index, src: audio.currentSrc, scene: sceneId, events: events.map(e => e.type) }); window.__setScene = setScene; }
+if (location.search.includes('test')) { window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; }; window.__feedLive = (t, smp) => { LIVE.feed(t, smp); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }; window.__state = () => ({ live: A === LIVE, tracks: playlist.tracks.map(t => t.name), index: playlist.index, src: audio.currentSrc, scene: sceneId, events: events.map(e => e.type) }); window.__setScene = setScene; window.__biomes = t => ({ city: cityBiomeAt(t).b, sea: seaBiomeAt(t).b }); }
 requestAnimationFrame(frame);

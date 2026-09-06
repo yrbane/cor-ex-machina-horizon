@@ -19,20 +19,40 @@ export const TYPES = {
   butterflies: { rate: 1 / 180, label: 'papillons', day: true, light: true },
   bat:         { rate: 1 / 130, label: 'chauves-souris', night: true },
   seeds:       { rate: 1 / 220, label: 'graines au vent', day: true },
-  sailboat:    { rate: 1 / 190, label: 'voiliers' },
-  ship:        { rate: 1 / 380, label: 'cargos' },
-  fish:        { rate: 1 / 80,  label: 'poissons' },
-  whale:       { rate: 1 / 650, label: 'baleines', single: true },
+  sailboat:    { rate: 1 / 190, label: 'voiliers', where: 'water' },
+  ship:        { rate: 1 / 380, label: 'cargos', where: 'water' },
+  fish:        { rate: 1 / 80,  label: 'poissons', where: 'water' },
+  whale:       { rate: 1 / 650, label: 'baleines', single: true, where: 'water' },
   drone:       { rate: 1 / 260, label: 'drones' },
   jets:        { rate: 1 / 700, label: 'patrouilles de chasseurs', day: true },
   rocket:      { rate: 1 / 1200, label: 'fusées', single: true },
   fireworks:   { rate: 1 / 60,  label: 'feux d’artifice', night: true },
-  ducks:       { rate: 1 / 240, label: 'familles de canards', day: true },
-  dolphins:    { rate: 1 / 200, label: 'dauphins' },
-  serpent:     { rate: 1 / 900, label: 'serpents de mer', single: true },
-  submarine:   { rate: 1 / 800, label: 'périscopes', single: true },
+  ducks:       { rate: 1 / 240, label: 'familles de canards', day: true, where: 'water' },
+  dolphins:    { rate: 1 / 200, label: 'dauphins', where: 'water' },
+  serpent:     { rate: 1 / 900, label: 'serpents de mer', single: true, where: 'water' },
+  submarine:   { rate: 1 / 800, label: 'périscopes', single: true, where: 'water' },
+  // Ville : sur la route et le trottoir
+  car:         { rate: 1 / 14,  label: 'voitures', where: 'city' },
+  bus:         { rate: 1 / 60,  label: 'bus', where: 'city' },
+  truck:       { rate: 1 / 90,  label: 'camions', where: 'city' },
+  bike:        { rate: 1 / 40,  label: 'vélos', where: 'city' },
+  walker:      { rate: 1 / 20,  label: 'passants', where: 'city' },
+  tram:        { rate: 1 / 240, label: 'tramways', where: 'city', single: true },
+  // Fond des océans
+  school:      { rate: 1 / 25,  label: 'bancs de poissons', where: 'sea' },
+  shark:       { rate: 1 / 120, label: 'requins', where: 'sea', single: true },
+  turtle:      { rate: 1 / 90,  label: 'tortues', where: 'sea' },
+  jelly:       { rate: 1 / 40,  label: 'méduses', where: 'sea' },
+  manta:       { rate: 1 / 200, label: 'raies manta', where: 'sea', single: true },
+  diver:       { rate: 1 / 150, label: 'plongeurs', where: 'sea' },
+  octopus:     { rate: 1 / 220, label: 'pieuvres', where: 'sea', single: true },
+  angler:      { rate: 1 / 160, label: 'baudroies', where: 'sea', night: true },
+  subhull:     { rate: 1 / 400, label: 'sous-marins', where: 'sea', single: true },
+  seawhale:    { rate: 1 / 500, label: 'baleines au large', where: 'sea', single: true },
 };
-export const WATER_TYPES = ['sailboat', 'ship', 'fish', 'whale', 'ducks', 'dolphins', 'serpent', 'submarine'];
+export const WATER_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'water');
+export const CITY_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'city');
+export const SEA_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'sea');
 export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
 export const TRANSIENT = ['shooting', 'fish', 'whale', 'fireworks', 'dolphins'];
 export const MAX_EVENTS = 3;   // passages simultanés au plus
@@ -98,6 +118,22 @@ export function spawn(type, rng, tn) {
     case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
     case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
     case 'submarine': Object.assign(e, { d: rnd(rng, .2, .6), v: rnd(rng, .004, .008) }); break;
+    case 'car': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .08, .13), col: pick(rng, ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152']), size: rnd(rng, .9, 1.1) }); break;
+    case 'bus': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
+    case 'truck': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
+    case 'bike': Object.assign(e, { lane: 2, v: rnd(rng, .03, .045), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230']) }); break;
+    case 'walker': Object.assign(e, { lane: 3, v: rnd(rng, .012, .02), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5']), size: rnd(rng, .85, 1.15), dog: rng() < .25 }); break;
+    case 'tram': Object.assign(e, { lane: 0, v: rnd(rng, .05, .06), col: '#f2c230' }); break;
+    case 'school': Object.assign(e, { y: rnd(rng, .15, .7), v: rnd(rng, .04, .07), n: 12 + Math.floor(rng() * 16), col: pick(rng, ['#9ad0ff', '#ffd27a', '#c9a0ff', '#8ff0d0']), size: rnd(rng, .8, 1.2) }); break;
+    case 'shark': Object.assign(e, { y: rnd(rng, .2, .6), v: rnd(rng, .035, .05), size: rnd(rng, 1, 1.4) }); break;
+    case 'turtle': Object.assign(e, { y: rnd(rng, .2, .7), v: rnd(rng, .015, .025), size: rnd(rng, .9, 1.2) }); break;
+    case 'jelly': Object.assign(e, { x: rnd(rng, .1, .9), y: .95, v: 0, vy: rnd(rng, .012, .02), size: rnd(rng, .7, 1.3), col: pick(rng, ['#ff9ad5', '#9ad0ff', '#c9a0ff', '#8ff0d0']) }); break;
+    case 'manta': Object.assign(e, { y: rnd(rng, .15, .5), v: rnd(rng, .025, .035), size: rnd(rng, 1.2, 1.6) }); break;
+    case 'diver': Object.assign(e, { y: rnd(rng, .3, .7), v: rnd(rng, .012, .02), col: pick(rng, ['#f2c230', '#e8402f', '#2f7fe8']) }); break;
+    case 'octopus': Object.assign(e, { y: rnd(rng, .5, .8), v: rnd(rng, .01, .018), size: rnd(rng, .9, 1.3) }); break;
+    case 'angler': Object.assign(e, { y: rnd(rng, .4, .8), v: rnd(rng, .01, .02), size: rnd(rng, .9, 1.2) }); break;
+    case 'subhull': Object.assign(e, { y: rnd(rng, .15, .45), v: rnd(rng, .02, .03), size: rnd(rng, 1.4, 1.8) }); break;
+    case 'seawhale': Object.assign(e, { y: rnd(rng, .1, .35), v: rnd(rng, .012, .018), size: rnd(rng, 1.6, 2.2) }); break;
   }
   return e;
 }
@@ -125,10 +161,13 @@ export function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null
         e.x += e.dir * e.v * dt * .3; e.y = clamp(e.y, .05, .5); break;
       case 'bat': e.x += e.dir * e.v * dt * (.6 + Math.abs(Math.sin(age * 4))); e.y = clamp(e.y + Math.sin(age * 7 + e.ph) * .15 * dt + Math.cos(age * 2.3) * .05 * dt, .1, .6); break;
       case 'butterflies': e.x += e.dir * e.v * dt; e.y += Math.sin(age * 2 + e.ph) * .02 * dt; break;
+      case 'jelly': e.y -= e.vy * dt * (.7 + .3 * Math.sin(age * 2 + e.ph)); e.x += Math.sin(age * .8 + e.ph) * .01 * dt; break;
+      case 'school': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .7 + e.ph) * .03 * dt; if (rng() < dt / 6) e.dir *= -1; break;
+      case 'diver': case 'turtle': case 'octopus': case 'angler': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .9 + e.ph) * .02 * dt; break;
       case 'drone': e.x += e.dir * e.v * dt; e.y += (Math.sin(age * 2.7 + e.ph) * .03 + Math.sin(age * 9) * .006) * dt; if (rng() < dt / 4) e.dir *= -1; break;
       case 'rocket': e.y -= e.v * dt; e.x += e.tilt * e.v * dt; if (tn - (e.lastSmoke || 0) > .12) { e.lastSmoke = tn; e.smoke.push({ x: e.x, y: e.y, a: 1 }); if (e.smoke.length > 24) e.smoke.shift(); } for (const p of e.smoke) p.a -= dt * .35; break;
       default: e.x += e.dir * e.v * dt;
     }
-    if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);
+    if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);   // la méduse sort par le haut, les autres par les côtés
   }
 }

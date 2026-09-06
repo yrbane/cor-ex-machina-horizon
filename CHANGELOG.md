@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 1.7.0 — 2026-09-06 · « Ville et Océan »
+
+- Troisième scène, « Ville » : les plans de loudness deviennent des rues d'immeubles, fenêtres allumées la nuit, antennes, clochers, enseignes au néon qui clignotent, lueur urbaine, route au premier plan avec trottoirs et lampadaires. Biomes cité moderne, vieille ville et néons, qui alternent par segments de cinq minutes.
+- Quatrième scène, « Océan » : le fond des océans. Dégradé d'eau, rayons de lumière depuis la surface, neige marine, bulles, reliefs sous-marins issus des plans, flore du premier plan qui défile. Biomes récif corallien, forêt de kelp et abysses avec cheminées hydrothermales et bioluminescence. Ni ciel, ni astres, ni nuages.
+- Seize passages propres aux nouvelles scènes : voitures avec phares la nuit, bus, camions, vélos, passants et leur chien, tramways avec pantographe ; bancs de poissons qui changent de sens, requins, tortues, méduses qui montent, raies manta, plongeurs et leurs bulles, pieuvres, baudroies la nuit avec leur leurre lumineux, sous-marins au projecteur, baleines au large.
+- Les passages sont rangés par catégorie (ciel, eau, ville, océan) et chaque scène n'admet que les siennes ; le cycle de biomes est devenu générique.
+- Le graphique des passages de la console s'est agrandi pour accueillir tout le monde.
+- Trois tests de plus, 82 au total.
+
 ## 1.6.0 — 2026-09-06 · « Vallée »
 
 - Deuxième scène, « Vallée » : même moteur, montagnes plus hautes, fond de vallée à la place de l'eau, végétation au premier plan qui défile avec le plan proche. Aucun passage d'eau, pas de bateau.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="cor-ex-machina-horizon 1.6.0">
+<meta name="generator" content="cor-ex-machina-horizon 1.7.0">
 <title>Cor ex machina, horizon</title>
 <style>
   :root { --ink: #eae7dd; --ink-2: #a9aec0; --ink-3: #6b7188; --line: rgba(255,255,255,.12); --series: #5aa0f0; --sub: #d95926; --bass: #199e70; --mid: #c98500; --high: #d55181; }
@@ -126,7 +126,7 @@
 <aside id="console" hidden>
   <button class="close" id="closeBtn">Fermer (Échap)</button>
   <header>
-    <h1>Cor ex machina, horizon <small>version 1.6.0</small></h1>
+    <h1>Cor ex machina, horizon <small>version 1.7.0</small></h1>
     <p id="stateLine"></p>
   </header>
   <nav class="tabs" role="tablist">
@@ -146,7 +146,7 @@
           <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>10 s, ou 1 min avec <kbd>Maj</kbd> ; <kbd>Page ↑</kbd> <kbd>Page ↓</kbd> 5 min ; <kbd>Début</kbd> <kbd>Fin</kbd></dd>
           <dt><kbd>espace</kbd></dt><dd>lecture ou pause</dd>
           <dt><kbd>c</kbd></dt><dd>barre de contrôles : transport, position, volume, VU-mètre, scène</dd>
-          <dt><kbd>s</kbd></dt><dd>scène suivante : Horizon, Vallée</dd>
+          <dt><kbd>s</kbd></dt><dd>scène suivante : Horizon, Vallée, Ville, Océan</dd>
           <dt><kbd>p</kbd> <kbd>n</kbd> <kbd>b</kbd></dt><dd>playlist, piste suivante, piste précédente</dd>
           <dt><kbd>o</kbd></dt><dd>ajouter des fichiers audio</dd>
           <dt><kbd>f</kbd> ou double clic</dt><dd>plein écran</dd>
@@ -161,7 +161,8 @@
         <p class="lead">Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</p>
         <p class="lead">Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. Le cœur du set bat dans l'astre levé.</p>
         <p class="lead">La météo change par segments de 3 minutes : ciel clair, nuageux, pluie, orage avec foudre sur les coups de sub, brouillard, neige, aurore la nuit, arc-en-ciel après la pluie de jour.</p>
-        <p class="lead">Passent au hasard, trois au plus à la fois et jamais deux de la même sorte : oiseaux, vols en V, avions dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, drones, chasseurs, fusées, satellites, ovnis, feux d'artifice, ballons, cerfs-volants, papillons, chauves-souris, graines, voiliers, cargos, canards, dauphins, poissons, baleines, serpent de mer, périscope.</p>
+        <p class="lead">Passent au hasard, trois au plus à la fois et jamais deux de la même sorte : oiseaux, vols en V, avions dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, drones, chasseurs, fusées, satellites, ovnis, feux d'artifice, ballons, cerfs-volants, papillons, chauves-souris, graines, voiliers, cargos, canards, dauphins, poissons, baleines, serpent de mer, périscope. En ville : voitures, bus, camions, vélos, passants et leur chien, tramways. Au fond des océans : bancs de poissons, requins, tortues, méduses, raies manta, plongeurs, pieuvres, baudroies la nuit, sous-marins, baleines au large.</p>
+        <p class="lead">Quatre scènes sur le même moteur : Horizon au bord de l'eau, Vallée et ses biomes verdoyants, désertiques ou enneigés, Ville qui passe de la cité moderne à la vieille ville et aux néons, Océan qui va du récif à la forêt de kelp et aux abysses. Les biomes alternent toutes les quatre ou cinq minutes.</p>
         <p class="lead">Pour un morceau hors set, le paysage se construit en direct à l'écoute et l'analyse est gardée en cache : la fois suivante, le paysage est connu dès le départ.</p>
       </div>
     </div>
@@ -200,7 +201,7 @@
   </section>
   <section data-tab="passages">
     <h2>Passages depuis l'ouverture de la page <small>par type, et ce qui est à l'écran</small></h2>
-    <canvas class="chart tall" id="chEvents" style="height:380px"></canvas>
+    <canvas class="chart tall" id="chEvents" style="height:620px"></canvas>
   </section>
 </aside>
 <aside id="playlist" hidden>
@@ -1366,20 +1367,40 @@ const TYPES = {
   butterflies: { rate: 1 / 180, label: 'papillons', day: true, light: true },
   bat:         { rate: 1 / 130, label: 'chauves-souris', night: true },
   seeds:       { rate: 1 / 220, label: 'graines au vent', day: true },
-  sailboat:    { rate: 1 / 190, label: 'voiliers' },
-  ship:        { rate: 1 / 380, label: 'cargos' },
-  fish:        { rate: 1 / 80,  label: 'poissons' },
-  whale:       { rate: 1 / 650, label: 'baleines', single: true },
+  sailboat:    { rate: 1 / 190, label: 'voiliers', where: 'water' },
+  ship:        { rate: 1 / 380, label: 'cargos', where: 'water' },
+  fish:        { rate: 1 / 80,  label: 'poissons', where: 'water' },
+  whale:       { rate: 1 / 650, label: 'baleines', single: true, where: 'water' },
   drone:       { rate: 1 / 260, label: 'drones' },
   jets:        { rate: 1 / 700, label: 'patrouilles de chasseurs', day: true },
   rocket:      { rate: 1 / 1200, label: 'fusées', single: true },
   fireworks:   { rate: 1 / 60,  label: 'feux d’artifice', night: true },
-  ducks:       { rate: 1 / 240, label: 'familles de canards', day: true },
-  dolphins:    { rate: 1 / 200, label: 'dauphins' },
-  serpent:     { rate: 1 / 900, label: 'serpents de mer', single: true },
-  submarine:   { rate: 1 / 800, label: 'périscopes', single: true },
+  ducks:       { rate: 1 / 240, label: 'familles de canards', day: true, where: 'water' },
+  dolphins:    { rate: 1 / 200, label: 'dauphins', where: 'water' },
+  serpent:     { rate: 1 / 900, label: 'serpents de mer', single: true, where: 'water' },
+  submarine:   { rate: 1 / 800, label: 'périscopes', single: true, where: 'water' },
+  // Ville : sur la route et le trottoir
+  car:         { rate: 1 / 14,  label: 'voitures', where: 'city' },
+  bus:         { rate: 1 / 60,  label: 'bus', where: 'city' },
+  truck:       { rate: 1 / 90,  label: 'camions', where: 'city' },
+  bike:        { rate: 1 / 40,  label: 'vélos', where: 'city' },
+  walker:      { rate: 1 / 20,  label: 'passants', where: 'city' },
+  tram:        { rate: 1 / 240, label: 'tramways', where: 'city', single: true },
+  // Fond des océans
+  school:      { rate: 1 / 25,  label: 'bancs de poissons', where: 'sea' },
+  shark:       { rate: 1 / 120, label: 'requins', where: 'sea', single: true },
+  turtle:      { rate: 1 / 90,  label: 'tortues', where: 'sea' },
+  jelly:       { rate: 1 / 40,  label: 'méduses', where: 'sea' },
+  manta:       { rate: 1 / 200, label: 'raies manta', where: 'sea', single: true },
+  diver:       { rate: 1 / 150, label: 'plongeurs', where: 'sea' },
+  octopus:     { rate: 1 / 220, label: 'pieuvres', where: 'sea', single: true },
+  angler:      { rate: 1 / 160, label: 'baudroies', where: 'sea', night: true },
+  subhull:     { rate: 1 / 400, label: 'sous-marins', where: 'sea', single: true },
+  seawhale:    { rate: 1 / 500, label: 'baleines au large', where: 'sea', single: true },
 };
-const WATER_TYPES = ['sailboat', 'ship', 'fish', 'whale', 'ducks', 'dolphins', 'serpent', 'submarine'];
+const WATER_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'water');
+const CITY_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'city');
+const SEA_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'sea');
 const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
 const TRANSIENT = ['shooting', 'fish', 'whale', 'fireworks', 'dolphins'];
 const MAX_EVENTS = 3;   // passages simultanés au plus
@@ -1445,6 +1466,22 @@ function spawn(type, rng, tn) {
     case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
     case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
     case 'submarine': Object.assign(e, { d: rnd(rng, .2, .6), v: rnd(rng, .004, .008) }); break;
+    case 'car': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .08, .13), col: pick(rng, ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152']), size: rnd(rng, .9, 1.1) }); break;
+    case 'bus': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
+    case 'truck': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
+    case 'bike': Object.assign(e, { lane: 2, v: rnd(rng, .03, .045), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230']) }); break;
+    case 'walker': Object.assign(e, { lane: 3, v: rnd(rng, .012, .02), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5']), size: rnd(rng, .85, 1.15), dog: rng() < .25 }); break;
+    case 'tram': Object.assign(e, { lane: 0, v: rnd(rng, .05, .06), col: '#f2c230' }); break;
+    case 'school': Object.assign(e, { y: rnd(rng, .15, .7), v: rnd(rng, .04, .07), n: 12 + Math.floor(rng() * 16), col: pick(rng, ['#9ad0ff', '#ffd27a', '#c9a0ff', '#8ff0d0']), size: rnd(rng, .8, 1.2) }); break;
+    case 'shark': Object.assign(e, { y: rnd(rng, .2, .6), v: rnd(rng, .035, .05), size: rnd(rng, 1, 1.4) }); break;
+    case 'turtle': Object.assign(e, { y: rnd(rng, .2, .7), v: rnd(rng, .015, .025), size: rnd(rng, .9, 1.2) }); break;
+    case 'jelly': Object.assign(e, { x: rnd(rng, .1, .9), y: .95, v: 0, vy: rnd(rng, .012, .02), size: rnd(rng, .7, 1.3), col: pick(rng, ['#ff9ad5', '#9ad0ff', '#c9a0ff', '#8ff0d0']) }); break;
+    case 'manta': Object.assign(e, { y: rnd(rng, .15, .5), v: rnd(rng, .025, .035), size: rnd(rng, 1.2, 1.6) }); break;
+    case 'diver': Object.assign(e, { y: rnd(rng, .3, .7), v: rnd(rng, .012, .02), col: pick(rng, ['#f2c230', '#e8402f', '#2f7fe8']) }); break;
+    case 'octopus': Object.assign(e, { y: rnd(rng, .5, .8), v: rnd(rng, .01, .018), size: rnd(rng, .9, 1.3) }); break;
+    case 'angler': Object.assign(e, { y: rnd(rng, .4, .8), v: rnd(rng, .01, .02), size: rnd(rng, .9, 1.2) }); break;
+    case 'subhull': Object.assign(e, { y: rnd(rng, .15, .45), v: rnd(rng, .02, .03), size: rnd(rng, 1.4, 1.8) }); break;
+    case 'seawhale': Object.assign(e, { y: rnd(rng, .1, .35), v: rnd(rng, .012, .018), size: rnd(rng, 1.6, 2.2) }); break;
   }
   return e;
 }
@@ -1472,11 +1509,14 @@ function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null) {
         e.x += e.dir * e.v * dt * .3; e.y = clamp(e.y, .05, .5); break;
       case 'bat': e.x += e.dir * e.v * dt * (.6 + Math.abs(Math.sin(age * 4))); e.y = clamp(e.y + Math.sin(age * 7 + e.ph) * .15 * dt + Math.cos(age * 2.3) * .05 * dt, .1, .6); break;
       case 'butterflies': e.x += e.dir * e.v * dt; e.y += Math.sin(age * 2 + e.ph) * .02 * dt; break;
+      case 'jelly': e.y -= e.vy * dt * (.7 + .3 * Math.sin(age * 2 + e.ph)); e.x += Math.sin(age * .8 + e.ph) * .01 * dt; break;
+      case 'school': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .7 + e.ph) * .03 * dt; if (rng() < dt / 6) e.dir *= -1; break;
+      case 'diver': case 'turtle': case 'octopus': case 'angler': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .9 + e.ph) * .02 * dt; break;
       case 'drone': e.x += e.dir * e.v * dt; e.y += (Math.sin(age * 2.7 + e.ph) * .03 + Math.sin(age * 9) * .006) * dt; if (rng() < dt / 4) e.dir *= -1; break;
       case 'rocket': e.y -= e.v * dt; e.x += e.tilt * e.v * dt; if (tn - (e.lastSmoke || 0) > .12) { e.lastSmoke = tn; e.smoke.push({ x: e.x, y: e.y, a: 1 }); if (e.smoke.length > 24) e.smoke.shift(); } for (const p of e.smoke) p.a -= dt * .35; break;
       default: e.x += e.dir * e.v * dt;
     }
-    if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);
+    if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);   // la méduse sort par le haut, les autres par les côtés
   }
 }
 
@@ -1995,6 +2035,189 @@ const DRAW = {
       poly(ctx, [[x - s * .6, yy - rise * 1.1], [x - s * .3, yy - rise * 1.5 - s * .4 * (rise / s)], [x + s * .1, yy - rise * 1.0]]); }     // aileron
     if (f > .1 && f < .55) { const sp = Math.sin((f - .1) / .45 * Math.PI); ctx.fillStyle = `rgba(230,240,255,${.55 * sp})`; for (let i = 0; i < 10; i++) { const px = x - s * .9 + (hash(i + 2) - .5) * s * 1.6 * sp, py = yy - rise - hash(i + 7) * s * 3 * sp; ctx.beginPath(); ctx.arc(px, py, s * .12 + hash(i) * s * .15, 0, TAU); ctx.fill(); } } // souffle
     if (f > .72) { const g = Math.sin((f - .72) / .28 * Math.PI), fx = x + s * 2.2 * e.dir; ctx.fillStyle = body; poly(ctx, [[fx, yy + 1], [fx - s * .3, yy - s * 1.6 * g], [fx - s * 1.3, yy - s * 2 * g], [fx - s * .2, yy - s * 1.2 * g], [fx + s * .9, yy - s * 2 * g], [fx + s * .1, yy - s * 1.6 * g]]); } // queue qui sort
+  },
+
+  // --- ville : la rue au premier plan. Voies : 0 loin, 1 près, 2 piste cyclable, 3 trottoir ---------------------------
+  car(ctx, e, c) {
+    const { wTop, H, x, sky, tn } = c, lane = e.lane, s = H * (lane ? .02 : .016) * (e.size || 1), yy = wTop + H * (lane ? .112 : .058), d = e.dir, night = sky.day < .5;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, yy + s * .05, s * 2.4, s * .18, 0, 0, TAU); ctx.fill();          // ombre
+    ctx.fillStyle = e.col; poly(ctx, [[x - s * 2.3, yy], [x - s * 2.3, yy - s * .7], [x - s * 1.4, yy - s * .8], [x - s * .9, yy - s * 1.5], [x + s * .9, yy - s * 1.5], [x + s * 1.6, yy - s * .8], [x + s * 2.3, yy - s * .7], [x + s * 2.3, yy]]);
+    ctx.fillStyle = night ? 'rgba(90,110,140,.9)' : 'rgba(180,210,235,.85)'; poly(ctx, [[x - s * .8, yy - s * .85], [x - s * .55, yy - s * 1.38], [x + s * .7, yy - s * 1.38], [x + s * 1.3, yy - s * .85]]);   // vitres
+    ctx.fillStyle = e.col; R(ctx, x - s * .05, yy - s * 1.4, s * .1, s * .55);                                                              // montant
+    ctx.fillStyle = '#16181f'; for (const wx of [-1.5, 1.5]) { ctx.beginPath(); ctx.arc(x + wx * s, yy, s * .42, 0, TAU); ctx.fill(); ctx.fillStyle = '#9aa0ad'; ctx.beginPath(); ctx.arc(x + wx * s, yy, s * .18, 0, TAU); ctx.fill(); ctx.fillStyle = '#16181f'; }   // roues
+    ctx.fillStyle = '#ffe9a8'; R(ctx, x + d * s * 2.1, yy - s * .55, s * .2, s * .22); ctx.fillStyle = '#ff3b30'; R(ctx, x - d * s * 2.3, yy - s * .55, s * .2, s * .22);                            // phares, feux
+    if (night) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,235,180,.18)'; poly(ctx, [[x + d * s * 2.3, yy - s * .5], [x + d * s * 7, yy - s * 1.2], [x + d * s * 7, yy + s * .3]]); ctx.globalCompositeOperation = 'source-over'; }   // faisceau
+  },
+
+  bus(ctx, e, c) {
+    const { wTop, H, x, sky, tn } = c, lane = e.lane, s = H * (lane ? .02 : .016), yy = wTop + H * (lane ? .112 : .058), d = e.dir, night = sky.day < .5;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, yy + s * .05, s * 5.2, s * .2, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = e.col; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - s * 5, yy - s * 2.6, s * 10, s * 2.6, s * .4) : ctx.rect(x - s * 5, yy - s * 2.6, s * 10, s * 2.6); ctx.fill();
+    ctx.fillStyle = night ? 'rgba(255,230,170,.85)' : 'rgba(190,215,235,.85)'; for (let i = 0; i < 6; i++) R(ctx, x - s * 4.6 + i * s * 1.55, yy - s * 2.2, s * 1.2, s * .9);   // fenêtres
+    ctx.fillStyle = night ? 'rgba(255,230,170,.85)' : 'rgba(190,215,235,.85)'; R(ctx, x + d * s * 4.6 - s * .5, yy - s * 2.2, s * 1, s * 1.6);                              // pare-brise
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; R(ctx, x - s * 5, yy - s * 1.1, s * 10, s * .12);
+    ctx.fillStyle = '#16181f'; for (const wx of [-3.3, 3.3]) { ctx.beginPath(); ctx.arc(x + wx * s, yy, s * .45, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#9aa0ad'; for (const wx of [-3.3, 3.3]) { ctx.beginPath(); ctx.arc(x + wx * s, yy, s * .18, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#ffe9a8'; R(ctx, x + d * s * 4.8 - s * .1, yy - s * .7, s * .2, s * .25); ctx.fillStyle = '#ff3b30'; R(ctx, x - d * s * 5 - s * .1, yy - s * .7, s * .2, s * .25);
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; R(ctx, x + d * s * 3.2 - s * .8, yy - s * 2.95, s * 1.6, s * .3);                                                                     // girouette
+  },
+
+  truck(ctx, e, c) {
+    const { wTop, H, x, sky } = c, lane = e.lane, s = H * (lane ? .02 : .016), yy = wTop + H * (lane ? .112 : .058), d = e.dir, night = sky.day < .5;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, yy + s * .05, s * 5.5, s * .2, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = e.col; R(ctx, x - d * s * 5.2 + (d > 0 ? 0 : -s * 2.4), yy - s * 3, s * 7.6, s * 2.5);                                        // remorque
+    ctx.fillStyle = 'rgba(0,0,0,.12)'; R(ctx, x - d * s * 5.2 + (d > 0 ? 0 : -s * 2.4), yy - s * 3, s * 7.6, s * .3);
+    ctx.fillStyle = '#3a4152'; poly(ctx, [[x + d * s * 2.6, yy], [x + d * s * 2.6, yy - s * 2.4], [x + d * s * 3.6, yy - s * 2.4], [x + d * s * 4.6, yy - s * 1.4], [x + d * s * 5.2, yy - s * 1.3], [x + d * s * 5.2, yy]]);   // cabine
+    ctx.fillStyle = night ? 'rgba(255,230,170,.8)' : 'rgba(190,215,235,.85)'; poly(ctx, [[x + d * s * 3.7, yy - s * 2.2], [x + d * s * 4.4, yy - s * 1.5], [x + d * s * 3.7, yy - s * 1.5]]);
+    ctx.fillStyle = '#16181f'; for (const wx of [-3.6, -2.4, 3.9]) { ctx.beginPath(); ctx.arc(x + d * wx * s, yy, s * .48, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#9aa0ad'; for (const wx of [-3.6, -2.4, 3.9]) { ctx.beginPath(); ctx.arc(x + d * wx * s, yy, s * .2, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#ffe9a8'; R(ctx, x + d * s * 5.1 - s * .1, yy - s * .8, s * .2, s * .25);
+  },
+
+  bike(ctx, e, c) {
+    const { wTop, H, x, tn } = c, s = H * .014, yy = wTop + H * .146, d = e.dir, ped = tn * 9 + e.ph;
+    ctx.strokeStyle = '#2b2f3a'; ctx.lineWidth = Math.max(1, s * .14);
+    for (const wx of [-1.1, 1.1]) { ctx.beginPath(); ctx.arc(x + wx * s, yy, s * .55, 0, TAU); ctx.stroke(); }
+    ctx.strokeStyle = e.col; ctx.beginPath(); ctx.moveTo(x - s * 1.1, yy); ctx.lineTo(x - s * .2, yy - s * .9); ctx.lineTo(x + s * .7 * d, yy - s * .9); ctx.lineTo(x + s * 1.1 * d, yy); ctx.moveTo(x - s * .2, yy - s * .9); ctx.lineTo(x + s * .1, yy); ctx.lineTo(x + s * .7 * d, yy - s * .9); ctx.stroke();   // cadre
+    ctx.strokeStyle = '#2b2f3a'; ctx.lineWidth = Math.max(1, s * .16); ctx.beginPath(); ctx.moveTo(x - s * .2 * d, yy - s * 1.0); ctx.lineTo(x - s * .1 * d, yy - s * 2.1); ctx.lineTo(x + s * .8 * d, yy - s * 1.7); ctx.stroke();                                   // dos, bras
+    ctx.beginPath(); ctx.moveTo(x - s * .2 * d, yy - s * 1.0); ctx.lineTo(x + Math.cos(ped) * s * .35, yy - s * .5 + Math.sin(ped) * s * .35); ctx.moveTo(x - s * .2 * d, yy - s * 1.0); ctx.lineTo(x - Math.cos(ped) * s * .35, yy - s * .5 - Math.sin(ped) * s * .35); ctx.stroke();   // jambes
+    ctx.fillStyle = e.col; ctx.beginPath(); ctx.arc(x - s * .1 * d, yy - s * 2.4, s * .32, 0, TAU); ctx.fill();                                                                        // casque
+  },
+
+  walker(ctx, e, c) {
+    const { wTop, H, x, tn, k } = c, s = H * .014 * (e.size || 1), yy = wTop + H * .178, d = e.dir, step = Math.sin(tn * 5 + e.ph), ink = '#22252f';
+    ctx.strokeStyle = ink; ctx.lineWidth = Math.max(1, s * .22); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x, yy - s * 1.3); ctx.lineTo(x + step * s * .45, yy); ctx.moveTo(x, yy - s * 1.3); ctx.lineTo(x - step * s * .45, yy); ctx.stroke();                    // jambes
+    ctx.fillStyle = e.col; poly(ctx, [[x - s * .45, yy - s * 1.2], [x - s * .4, yy - s * 2.6], [x + s * .4, yy - s * 2.6], [x + s * .45, yy - s * 1.2]]);                        // manteau
+    ctx.strokeStyle = e.col; ctx.beginPath(); ctx.moveTo(x, yy - s * 2.4); ctx.lineTo(x - step * s * .4 * d, yy - s * 1.5); ctx.stroke();                                          // bras
+    ctx.fillStyle = '#e9c8a8'; ctx.beginPath(); ctx.arc(x, yy - s * 3, s * .35, 0, TAU); ctx.fill();                                                                             // tête
+    ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(x, yy - s * 3.1, s * .37, Math.PI, 0); ctx.fill();                                                                             // cheveux
+    if (e.dog) { const dx = x - d * s * 1.8; ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - d * s * .3, yy - s * 1.6); ctx.lineTo(dx, yy - s * .55); ctx.stroke(); ctx.fillStyle = '#6b4a2b'; ctx.beginPath(); ctx.ellipse(dx, yy - s * .4, s * .7, s * .3, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(dx + d * s * .7, yy - s * .6, s * .25, 0, TAU); ctx.fill(); ctx.lineWidth = Math.max(1, s * .12); ctx.strokeStyle = '#6b4a2b'; ctx.beginPath(); for (const p of [-.4, .4]) { ctx.moveTo(dx + p * s, yy - s * .3); ctx.lineTo(dx + p * s + step * s * .2, yy); } ctx.stroke(); }   // chien en laisse
+  },
+
+  tram(ctx, e, c) {
+    const { wTop, H, x, sky, tn } = c, s = H * .016, yy = wTop + H * .058, d = e.dir, night = sky.day < .5, win = night ? 'rgba(255,235,180,.9)' : 'rgba(190,215,235,.85)';
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, yy - s * 5.2); ctx.lineTo(c.W, yy - s * 5.2); ctx.stroke();                          // caténaire
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, yy + s * .05, s * 9.5, s * .18, 0, 0, TAU); ctx.fill();
+    for (const off of [-4.6, 4.6]) { const cx = x + off * s; ctx.fillStyle = e.col; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - s * 4.4, yy - s * 2.7, s * 8.8, s * 2.7, s * .5) : ctx.rect(cx - s * 4.4, yy - s * 2.7, s * 8.8, s * 2.7); ctx.fill();
+      ctx.fillStyle = win; for (let i = 0; i < 5; i++) R(ctx, cx - s * 4 + i * s * 1.7, yy - s * 2.3, s * 1.3, s * 1.1);
+      ctx.fillStyle = '#3a4152'; R(ctx, cx - s * 4.4, yy - s * .55, s * 8.8, s * .55); R(ctx, cx - s * .3, yy - s * 3.4, s * .6, s * .8); }
+    ctx.fillStyle = '#3a4152'; R(ctx, x - s * .6, yy - s * 2.4, s * 1.2, s * 2.2);                                                                                              // soufflet
+    ctx.strokeStyle = '#3a4152'; ctx.lineWidth = Math.max(1, s * .12); ctx.beginPath(); ctx.moveTo(x - d * s * 3.5, yy - s * 3.4); ctx.lineTo(x - d * s * 4.6, yy - s * 5.2); ctx.lineTo(x - d * s * 5.4, yy - s * 5.2); ctx.stroke();   // pantographe
+    ctx.fillStyle = '#ffe9a8'; R(ctx, x + d * s * 9 - s * .2, yy - s * 1.3, s * .3, s * .3); ctx.fillStyle = '#ff3b30'; R(ctx, x - d * s * 9 - s * .1, yy - s * 1.3, s * .3, s * .3);
+    if (Math.sin(tn * 40) > .97) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(180,220,255,.8)'; ctx.beginPath(); ctx.arc(x - d * s * 5.4, yy - s * 5.2, s * .6, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }   // étincelle
+  },
+
+  // --- océan : dans le volume d'eau, y est une fraction de la hauteur ---------------------------------------------------
+  school(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .006 * (e.size || 1), d = e.dir;
+    for (let i = 0; i < e.n; i++) {
+      const ox = (hash(i + e.ph) - .5) * s * 18, oy = (hash(i + 3 + e.ph) - .5) * s * 9 + Math.sin(tn * 2 + i) * s * .6, fx = x + ox * d, fy = y + oy, tail = Math.sin(tn * 8 + i) * s * .5;
+      ctx.fillStyle = e.col; ctx.beginPath(); ctx.ellipse(fx, fy, s * 1.2, s * .45, 0, 0, TAU); ctx.fill();
+      poly(ctx, [[fx - d * s * 1.0, fy], [fx - d * s * 1.9, fy - s * .6 + tail], [fx - d * s * 1.9, fy + s * .6 + tail]]);
+      ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.ellipse(fx + d * s * .2, fy - s * .1, s * .6, s * .15, 0, 0, TAU); ctx.fill();   // flanc argenté
+    }
+  },
+
+  shark(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .02 * (e.size || 1), d = e.dir, sw = Math.sin(tn * 3 + e.ph) * s * .35, body = 'rgba(96,112,130,.95)';
+    ctx.fillStyle = body; ctx.beginPath(); ctx.moveTo(x + d * s * 3.2, y); ctx.quadraticCurveTo(x + d * s * 1, y - s * 1.1, x - d * s * 2.2, y - s * .5); ctx.lineTo(x - d * s * 3.4, y - s * 1.6 + sw); ctx.lineTo(x - d * s * 3.0, y + sw * .3); ctx.lineTo(x - d * s * 3.6, y + s * 1.2 + sw); ctx.lineTo(x - d * s * 2.2, y + s * .45); ctx.quadraticCurveTo(x + d * s * 1, y + s * .9, x + d * s * 3.2, y); ctx.fill();
+    poly(ctx, [[x - d * s * .4, y - s * .9], [x + d * s * .5, y - s * .85], [x - d * s * .1, y - s * 2.1]]);                                        // aileron dorsal
+    poly(ctx, [[x + d * s * .6, y + s * .6], [x + d * s * 1.4, y + s * .6], [x + d * s * .2, y + s * 1.6]]);                                          // pectorale
+    ctx.fillStyle = 'rgba(210,220,230,.85)'; ctx.beginPath(); ctx.moveTo(x + d * s * 3, y + s * .1); ctx.quadraticCurveTo(x + d * s * 1, y + s * .8, x - d * s * 1.8, y + s * .4); ctx.quadraticCurveTo(x + d * s * 1, y + s * .5, x + d * s * 3, y + s * .1); ctx.fill();   // ventre
+    ctx.strokeStyle = 'rgba(40,50,60,.5)'; ctx.lineWidth = 1; ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo(x + d * s * (1.4 - i * .25), y - s * .3); ctx.lineTo(x + d * s * (1.3 - i * .25), y + s * .3); } ctx.stroke();   // ouïes
+    ctx.fillStyle = '#0a0c12'; ctx.beginPath(); ctx.arc(x + d * s * 2.4, y - s * .25, Math.max(1, s * .12), 0, TAU); ctx.fill();
+  },
+
+  turtle(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .016 * (e.size || 1), d = e.dir, fl = Math.sin(tn * 2.2 + e.ph);
+    ctx.fillStyle = '#5a8a3a'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.ellipse(x + side * s * 1.2, y + s * .2 + fl * s * .6 * side, s * 1.1, s * .35, side * (.5 + fl * .3) * d, 0, TAU); ctx.fill(); }   // nageoires
+    ctx.beginPath(); ctx.ellipse(x - d * s * 1.9, y + s * .2, s * .35, s * .2, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#7a6238'; ctx.beginPath(); ctx.ellipse(x, y, s * 1.8, s * 1.0, 0, 0, TAU); ctx.fill();                                              // carapace
+    ctx.fillStyle = 'rgba(255,230,160,.35)'; for (let i = 0; i < 5; i++) { const px = x + (i - 2) * s * .7, py = y + Math.sin(i * 1.3) * s * .35; ctx.beginPath(); ctx.moveTo(px, py - s * .35); ctx.lineTo(px + s * .3, py - s * .1); ctx.lineTo(px + s * .2, py + s * .3); ctx.lineTo(px - s * .2, py + s * .3); ctx.lineTo(px - s * .3, py - s * .1); ctx.closePath(); ctx.fill(); }   // écailles
+    ctx.fillStyle = '#5a8a3a'; ctx.beginPath(); ctx.ellipse(x + d * s * 2.1, y - s * .1, s * .55, s * .4, 0, 0, TAU); ctx.fill();                          // tête
+    ctx.fillStyle = '#0a0c12'; ctx.beginPath(); ctx.arc(x + d * s * 2.35, y - s * .2, Math.max(1, s * .09), 0, TAU); ctx.fill();
+  },
+
+  jelly(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .018 * (e.size || 1), pulse = .85 + .15 * Math.sin(tn * 2 + e.ph), col = e.col;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = col; ctx.globalAlpha = .55; ctx.lineWidth = Math.max(1, s * .08);
+    for (let i = 0; i < 7; i++) { const tx = x + (i - 3) * s * .32; ctx.beginPath(); ctx.moveTo(tx, y + s * .1); for (let j = 1; j <= 6; j++) ctx.lineTo(tx + Math.sin(tn * 1.5 + i + j * .7) * s * .25 * j / 3, y + s * .1 + j * s * .55); ctx.stroke(); }   // tentacules
+    ctx.globalAlpha = .7; ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, s * 1.3 * pulse, s * 1.0 / pulse, 0, Math.PI, 0); ctx.fill();               // ombrelle
+    ctx.globalAlpha = .35; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x - s * .3, y - s * .45, s * .4, s * .2, -.5, 0, TAU); ctx.fill();
+    ctx.globalAlpha = .5; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.moveTo(x - s * 1.3 * pulse, y); ctx.quadraticCurveTo(x, y + s * .35, x + s * 1.3 * pulse, y); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  },
+
+  manta(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .028 * (e.size || 1), d = e.dir, fl = Math.sin(tn * 1.6 + e.ph), body = 'rgba(30,38,52,.95)';
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.moveTo(x + d * s * .6, y); ctx.quadraticCurveTo(x, y - s * 1.2 * fl - s * .4, x - d * s * .2, y - s * 2.2 * fl - s * .3); ctx.quadraticCurveTo(x - d * s * .8, y - s * .3, x - d * s * .8, y); ctx.quadraticCurveTo(x - d * s * .8, y + s * .3, x - d * s * .2, y + s * 2.2 * fl + s * .3); ctx.quadraticCurveTo(x, y + s * 1.2 * fl + s * .4, x + d * s * .6, y); ctx.fill();   // ailes
+    ctx.beginPath(); ctx.ellipse(x, y, s * 1.1, s * .5, 0, 0, TAU); ctx.fill();                                                                         // corps
+    ctx.strokeStyle = body; ctx.lineWidth = Math.max(1, s * .1); ctx.beginPath(); ctx.moveTo(x - d * s * 1, y); ctx.quadraticCurveTo(x - d * s * 2.5, y + Math.sin(tn * 1.6) * s * .3, x - d * s * 3.8, y + s * .2); ctx.stroke();   // queue
+    ctx.fillStyle = 'rgba(210,220,235,.8)'; ctx.beginPath(); ctx.ellipse(x + d * s * .1, y + s * .15, s * .7, s * .22, 0, 0, TAU); ctx.fill();
+    for (const side of [-1, 1]) { ctx.strokeStyle = body; ctx.beginPath(); ctx.moveTo(x + d * s * 1.0, y + side * s * .25); ctx.quadraticCurveTo(x + d * s * 1.5, y + side * s * .45, x + d * s * 1.6, y + side * s * .15); ctx.stroke(); }   // cornes céphaliques
+  },
+
+  diver(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .012, d = e.dir, kick = Math.sin(tn * 3 + e.ph), suit = '#1b2030';
+    ctx.strokeStyle = suit; ctx.lineWidth = Math.max(1.5, s * .45); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x - d * s * .8, y); ctx.lineTo(x - d * s * 2.2, y + kick * s * .5); ctx.moveTo(x - d * s * .8, y); ctx.lineTo(x - d * s * 2.2, y - kick * s * .5); ctx.stroke();   // jambes
+    ctx.fillStyle = e.col; for (const side of [-1, 1]) poly(ctx, [[x - d * s * 2.1, y + side * kick * s * .5], [x - d * s * 3.3, y + side * kick * s * .5 - s * .35], [x - d * s * 3.3, y + side * kick * s * .5 + s * .35]]);   // palmes
+    ctx.fillStyle = suit; ctx.beginPath(); ctx.ellipse(x, y, s * 1.3, s * .5, 0, 0, TAU); ctx.fill();                                                   // corps
+    ctx.fillStyle = e.col; R(ctx, x - s * .6, y - s * .9, s * 1.2, s * .45);                                                                           // bouteille
+    ctx.strokeStyle = suit; ctx.lineWidth = Math.max(1, s * .3); ctx.beginPath(); ctx.moveTo(x + d * s * .4, y + s * .2); ctx.lineTo(x + d * s * 1.6, y + s * .7 + Math.sin(tn * 2) * s * .1); ctx.stroke();   // bras
+    ctx.fillStyle = suit; ctx.beginPath(); ctx.arc(x + d * s * 1.5, y - s * .1, s * .45, 0, TAU); ctx.fill();                                            // tête
+    ctx.fillStyle = 'rgba(160,220,255,.9)'; ctx.beginPath(); ctx.ellipse(x + d * s * 1.7, y - s * .15, s * .28, s * .2, 0, 0, TAU); ctx.fill();          // masque
+    const bp = (tn * .8 + e.ph) % 1; ctx.strokeStyle = 'rgba(220,240,255,.6)'; ctx.lineWidth = 1; for (let i = 0; i < 4; i++) { const f = (bp + i * .25) % 1; ctx.beginPath(); ctx.arc(x + d * s * 1.6 + Math.sin(f * 9 + i) * s * .3, y - s * .4 - f * s * 6, s * .12 + f * s * .25, 0, TAU); ctx.stroke(); }   // bulles
+  },
+
+  octopus(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .018 * (e.size || 1), d = e.dir, body = '#a0475c';
+    ctx.strokeStyle = body; ctx.lineWidth = Math.max(1.5, s * .28); ctx.lineCap = 'round';
+    for (let i = 0; i < 8; i++) { const a = (i / 7 - .5) * 1.4, bx = x + Math.sin(a) * s * .9, wave = Math.sin(tn * 1.8 + i * .9 + e.ph); ctx.beginPath(); ctx.moveTo(bx, y + s * .5); ctx.quadraticCurveTo(bx + Math.sin(a) * s * 1.2 + wave * s * .4, y + s * 1.6, bx + Math.sin(a) * s * 2 - wave * s * .5, y + s * 2.4 + Math.cos(a) * s * .3); ctx.stroke(); }   // tentacules
+    ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(x, y, s * 1.1, s * 1.3, 0, 0, TAU); ctx.fill();                                                   // manteau
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.beginPath(); ctx.ellipse(x - s * .35, y - s * .5, s * .35, s * .5, .3, 0, TAU); ctx.fill();
+    for (const side of [-1, 1]) { ctx.fillStyle = '#f5e6c8'; ctx.beginPath(); ctx.ellipse(x + side * s * .45, y + s * .35, s * .26, s * .2, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#0a0c12'; ctx.beginPath(); ctx.ellipse(x + side * s * .45 + d * s * .06, y + s * .35, s * .12, s * .08, 0, 0, TAU); ctx.fill(); }   // yeux
+    ctx.fillStyle = 'rgba(255,255,255,.3)'; for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.arc(x + Math.sin(i * 2.1) * s * .7, y + Math.cos(i * 1.7) * s * .8, s * .07, 0, TAU); ctx.fill(); }   // ventouses
+  },
+
+  angler(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .016 * (e.size || 1), d = e.dir, glow = .6 + .4 * Math.sin(tn * 4 + e.ph), lx = x + d * s * 2.4, ly = y - s * 1.5;
+    ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, s * 2.5); g.addColorStop(0, `rgba(190,240,255,${.55 * glow})`); g.addColorStop(1, 'rgba(190,240,255,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lx, ly, s * 2.5, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over';   // halo du leurre
+    ctx.fillStyle = '#141826'; ctx.beginPath(); ctx.ellipse(x, y, s * 1.9, s * 1.2, 0, 0, TAU); ctx.fill();
+    poly(ctx, [[x - d * s * 1.7, y], [x - d * s * 2.8, y - s * .9], [x - d * s * 2.8, y + s * .9]]); poly(ctx, [[x - d * s * .4, y - s * 1.1], [x - d * s * 1.3, y - s * 1.1], [x - d * s * .9, y - s * 1.9]]);   // queue, dorsale
+    ctx.fillStyle = '#0a0d18'; ctx.beginPath(); ctx.moveTo(x + d * s * 1.9, y - s * .3); ctx.quadraticCurveTo(x + d * s * .7, y + s * .3, x + d * s * 1.9, y + s * 1.1); ctx.fill();   // bouche ouverte
+    ctx.fillStyle = '#e8ecf5'; for (let i = 0; i < 5; i++) { const tx = x + d * s * (1.8 - i * .3); poly(ctx, [[tx, y - s * .25 + i * .05 * s], [tx + d * s * .1, y - s * .25 + i * .05 * s], [tx + d * s * .05, y + s * .2 + i * .1 * s]]); poly(ctx, [[tx, y + s * 1.05 - i * .1 * s], [tx + d * s * .1, y + s * 1.05 - i * .1 * s], [tx + d * s * .05, y + s * .55]]); }   // dents
+    ctx.strokeStyle = '#2a3048'; ctx.lineWidth = Math.max(1, s * .1); ctx.beginPath(); ctx.moveTo(x + d * s * .6, y - s * 1.1); ctx.quadraticCurveTo(x + d * s * 1.4, y - s * 2.6, lx, ly); ctx.stroke();   // filament
+    ctx.fillStyle = `rgba(220,250,255,${.7 + .3 * glow})`; ctx.beginPath(); ctx.arc(lx, ly, s * .3, 0, TAU); ctx.fill();
+    ctx.fillStyle = `rgba(200,230,255,${.6 * glow})`; ctx.beginPath(); ctx.arc(x + d * s * 1.0, y - s * .45, s * .18, 0, TAU); ctx.fill();          // œil qui prend la lumière
+  },
+
+  subhull(ctx, e, c) {
+    const { H, x, y, tn, W } = c, s = H * .02 * (e.size || 1), d = e.dir, hull = '#2a3140', port = 'rgba(255,230,170,.9)';
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,245,210,.12)'; poly(ctx, [[x + d * s * 4.5, y], [x + d * s * 16, y - s * 3.2], [x + d * s * 16, y + s * 3.2]]); ctx.globalCompositeOperation = 'source-over';   // projecteur
+    ctx.fillStyle = hull; ctx.beginPath(); ctx.ellipse(x, y, s * 4.6, s * 1.2, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y + s * .5, s * 4.4, s * .6, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = hull; poly(ctx, [[x - d * s * 1.4, y - s * 1], [x - d * s * .2, y - s * 1], [x + d * s * .1, y - s * 2.4], [x - d * s * 1.2, y - s * 2.4]]);                   // kiosque
+    R(ctx, x - d * s * .5 - s * .08, y - s * 3.3, s * .16, s * 1); R(ctx, x - d * s * .5 - s * .08, y - s * 3.3, d > 0 ? s * .5 : -s * .5, s * .16);                      // périscope
+    for (const side of [-1, 1]) poly(ctx, [[x - d * s * 4.2, y], [x - d * s * 5.2, y + side * s * 1.5], [x - d * s * 4.6, y]]);                                          // gouvernes
+    ctx.fillStyle = port; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(x + (i - 2) * s * 1.2, y - s * .1, s * .16, 0, TAU); ctx.fill(); }                          // hublots
+    ctx.strokeStyle = 'rgba(200,210,230,.7)'; ctx.lineWidth = Math.max(1, s * .12); const rot = tn * 12; ctx.beginPath(); ctx.moveTo(x - d * s * 4.7, y - Math.sin(rot) * s * .7); ctx.lineTo(x - d * s * 4.7, y + Math.sin(rot) * s * .7); ctx.stroke();   // hélice
+    const bp = (tn * .7 + e.ph) % 1; for (let i = 0; i < 3; i++) { const f = (bp + i / 3) % 1; ctx.strokeStyle = `rgba(220,240,255,${.5 - f * .4})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x - d * s * 5 + Math.sin(f * 8) * s * .3, y - f * s * 5, s * .1 + f * s * .3, 0, TAU); ctx.stroke(); }
+  },
+
+  seawhale(ctx, e, c) {
+    const { H, x, y, tn } = c, s = H * .04 * (e.size || 1), d = e.dir, fl = Math.sin(tn * 1.1 + e.ph), body = 'rgba(40,58,86,.6)';
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.moveTo(x + d * s * 3.4, y); ctx.quadraticCurveTo(x + d * s * 2.6, y - s * 1.3, x - d * s * .5, y - s * 1.1); ctx.quadraticCurveTo(x - d * s * 2.4, y - s * .9, x - d * s * 3.6, y + fl * s * .4); ctx.quadraticCurveTo(x - d * s * 2.4, y + s * .8, x - d * s * .5, y + s * 1.0); ctx.quadraticCurveTo(x + d * s * 2.6, y + s * 1.1, x + d * s * 3.4, y); ctx.fill();   // corps
+    poly(ctx, [[x - d * s * 3.5, y + fl * s * .4], [x - d * s * 4.6, y - s * .9 + fl * s * .8], [x - d * s * 4.2, y + fl * s * .4], [x - d * s * 4.6, y + s * 1.2 + fl * s * .8]]);   // caudale
+    poly(ctx, [[x + d * s * .8, y + s * .6], [x + d * s * 2.2, y + s * .5], [x + d * s * 1.0, y + s * 1.8]]);                                                            // pectorale
+    poly(ctx, [[x - d * s * 1.2, y - s * 1.0], [x - d * s * 1.9, y - s * .95], [x - d * s * 1.7, y - s * 1.45]]);                                                        // dorsale
+    ctx.fillStyle = 'rgba(180,200,225,.35)'; ctx.beginPath(); ctx.ellipse(x + d * s * .8, y + s * .55, s * 2.2, s * .4, 0, 0, TAU); ctx.fill();                          // gorge claire
+    ctx.strokeStyle = 'rgba(20,30,50,.3)'; ctx.lineWidth = 1; ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.moveTo(x + d * s * (3 - i * .0), y + s * (.2 + i * .18)); ctx.lineTo(x - d * s * .8, y + s * (.25 + i * .18)); } ctx.stroke();   // sillons
+    ctx.fillStyle = 'rgba(10,14,24,.7)'; ctx.beginPath(); ctx.arc(x + d * s * 2.7, y - s * .15, Math.max(1, s * .1), 0, TAU); ctx.fill();
   },
 };
 
@@ -2600,34 +2823,35 @@ class ControlsBar {
 
 // ---- src/scenes/registry.js
 
-// Registre des scènes : même moteur, compositions différentes
+// Registre des scènes : même moteur, compositions différentes. Chaque scène admet des catégories de passages.
 const SCENES = [
-  { id: 'horizon', name: 'Horizon', water: true, blurb: 'montagnes au bord de l’eau, reflets et voiliers' },
-  { id: 'valley', name: 'Vallée', water: false, blurb: 'vallée de montagne, biomes verdoyants, désertiques ou enneigés' },
+  { id: 'horizon', name: 'Horizon', water: true, cats: ['sky', 'water'], blurb: 'montagnes au bord de l’eau, reflets et voiliers' },
+  { id: 'valley', name: 'Vallée', water: false, cats: ['sky'], blurb: 'vallée de montagne, biomes verdoyants, désertiques ou enneigés' },
+  { id: 'city', name: 'Ville', water: false, cats: ['sky', 'city'], blurb: 'rues d’immeubles, moderne, vieille ville ou néons, trafic et passants' },
+  { id: 'sea', name: 'Océan', water: false, cats: ['sea'], blurb: 'fond des océans, récif, forêt de kelp ou abysses, bancs de poissons et requins' },
 ];
 const sceneById = id => SCENES.find(s => s.id === id) || SCENES[0];
 const nextSceneId = id => { const i = SCENES.findIndex(s => s.id === id); return SCENES[(i + 1) % SCENES.length].id; };
-// Types de passages admis dans une scène : sans eau, pas de bateau ni de baleine
-const allowedTypes = id => Object.keys(TYPES).filter(t => sceneById(id).water || !WATER_TYPES.includes(t));
+// Types de passages admis dans une scène, selon leur catégorie (sky par défaut)
+const allowedTypes = id => { const cats = sceneById(id).cats; return Object.keys(TYPES).filter(t => cats.includes(TYPES[t].where || 'sky')); };
 
 // ---- src/scenes/biome.js
 
 // Biomes de la vallée : segments de quatre minutes, jamais deux fois le même de suite, transition douce de vingt secondes
 const BIOMES = ['green', 'desert', 'snow'];
 const BSEG = 240;
-const seq = [];
-function biomeOf(seg) {
-  if (seg < 0) return BIOMES[0];
-  while (seq.length <= seg) {
-    const i = seq.length, prev = i ? seq[i - 1] : null, choices = BIOMES.filter(b => b !== prev);
-    seq.push(choices[Math.floor(hash(i * 2.3 + 17) * choices.length)]);
-  }
-  return seq[seg];
+// Cycle générique : une liste de biomes, une période, une graine ; jamais deux fois le même de suite, transition de 20 s
+function makeBiomeCycle(list, period, seed = 17) {
+  const seq = [];
+  const of = seg => {
+    if (seg < 0) return list[0];
+    while (seq.length <= seg) { const i = seq.length, prev = i ? seq[i - 1] : null, choices = list.filter(b => b !== prev); seq.push(choices[Math.floor(hash(i * 2.3 + seed) * choices.length)]); }
+    return seq[seg];
+  };
+  return { list, period, at(t) { const seg = Math.floor(t / period), local = t - seg * period; return { b: of(seg), prev: of(seg - 1), k: clamp(local / 20, 0, 1), seg }; } };
 }
-function biomeAt(t) {
-  const seg = Math.floor(t / BSEG), local = t - seg * BSEG;
-  return { b: biomeOf(seg), prev: biomeOf(seg - 1), k: clamp(local / 20, 0, 1), seg };
-}
+const valleyCycle = makeBiomeCycle(BIOMES, BSEG, 17);
+const biomeAt = t => valleyCycle.at(t);
 
 // Palettes : plans du lointain au proche, sol, ciel, végétation
 const PAL = {
@@ -2818,7 +3042,164 @@ function renderValley(ctx, S, D) {
   return { src, srcVis, horizon, floor, wTop: floor, layerGeom: geom };
 }
 
+// ---- src/scenes/city.js
+
+
+
+
+// Scène « Ville » : les plans de loudness deviennent des rues d'immeubles, la route au premier plan, trafic et passants.
+const CITY_BIOMES = ['modern', 'old', 'neon'];
+const cityCycle = makeBiomeCycle(CITY_BIOMES, 300, 41);
+const cityBiomeAt = t => cityCycle.at(t);
+const cityGeometry = H => ({ horizon: H * .56, ground: H * .80 });
+const cityCol = (c, dl = 0, a = 1) => `hsla(${c.h},${c.s}%,${clamp(c.l + dl, 0, 100)}%,${a})`;
+// Palettes : immeubles du lointain au proche, fenêtres, route, ciel de jour, enseignes
+const CITY_PAL = {
+  modern: { layers: [{ h: 215, s: 18, l: 62 }, { h: 215, s: 20, l: 50 }, { h: 218, s: 22, l: 38 }, { h: 220, s: 24, l: 28 }], win: { h: 195, s: 80, l: 70 }, road: { h: 220, s: 10, l: 24 }, sky: { top: { h: 212, s: 55, l: 54 }, bottom: { h: 205, s: 45, l: 80 } }, neon: 0, spires: 0 },
+  old:    { layers: [{ h: 30, s: 30, l: 62 }, { h: 26, s: 38, l: 52 }, { h: 22, s: 42, l: 42 }, { h: 18, s: 45, l: 32 }], win: { h: 40, s: 90, l: 65 }, road: { h: 30, s: 15, l: 30 }, sky: { top: { h: 208, s: 50, l: 58 }, bottom: { h: 35, s: 45, l: 82 } }, neon: 0, spires: 1 },
+  neon:   { layers: [{ h: 265, s: 25, l: 30 }, { h: 270, s: 30, l: 22 }, { h: 275, s: 35, l: 16 }, { h: 280, s: 40, l: 10 }], win: { h: 320, s: 90, l: 65 }, road: { h: 270, s: 20, l: 12 }, sky: { top: { h: 260, s: 45, l: 30 }, bottom: { h: 300, s: 50, l: 45 } }, neon: 1, spires: 0 },
+};
+function cityPalette({ b, prev, k }) {
+  const A = CITY_PAL[prev] || CITY_PAL[b], B = CITY_PAL[b];
+  return { layers: B.layers.map((c, i) => mix(A.layers[i], c, k)), win: mix(A.win, B.win, k), road: mix(A.road, B.road, k), sky: { top: mix(A.sky.top, B.sky.top, k), bottom: mix(A.sky.bottom, B.sky.bottom, k) }, neon: lerp(A.neon, B.neon, k), spires: lerp(A.spires, B.spires, k), b, k };
+}
+
+// Une rue d'immeubles : la courbe du plan est échantillonnée par parcelles, chaque parcelle est un immeuble
+function drawStreet(ctx, S, L, i, y0, amp, c, pal, night) {
+  const { W, t, parX, tn } = S, depth = i / 3, px = W / 2 - parX * W * (.01 + depth * .05), t0 = t - L.win / 2;
+  const n = 18 + i * 8, bw = W / n, winCol = cityCol(pal.win), lit = night * (.55 + .3 * pal.neon);
+  ctx.fillStyle = cityCol(c, -(1 - night) * 0 - night * 22);
+  for (let k = 0; k < n; k++) {
+    const x = k * bw, tt = t0 + (x + bw / 2 - px) / W * L.win, v = layerValue(L, tt); if (v <= 0) continue;
+    const seed = Math.floor(tt / (L.win / n)) * 7.1 + i, h = v * amp * (.7 + hash(seed) * .5), top = y0 - h, gap = bw * (.08 + hash(seed + .3) * .12), w = bw - gap;
+    ctx.fillStyle = cityCol(c, -night * 22 + (hash(seed + .7) - .5) * 6); ctx.fillRect(x + gap / 2, top, w, h);
+    if (pal.spires > .5 && hash(seed + .9) > .8) { ctx.beginPath(); ctx.moveTo(x + gap / 2, top); ctx.lineTo(x + bw / 2, top - h * .35); ctx.lineTo(x + bw - gap / 2, top); ctx.fill(); }   // clocher
+    if (hash(seed + .5) > .7) ctx.fillRect(x + bw / 2 - 1, top - h * .12, 2, h * .12);                                                          // antenne
+    if (i >= 1 && h > 12) {   // fenêtres, allumées la nuit selon un tirage stable
+      const rows = Math.max(1, Math.floor(h / (bw * .35))), cols = Math.max(1, Math.floor(w / (bw * .3)));
+      for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+        const on = hash(seed * 3 + r * 1.3 + q * .7) < lit || (!night && hash(seed + r + q) > .85);
+        ctx.fillStyle = on ? `hsla(${pal.win.h},${pal.win.s}%,${pal.win.l}%,${.55 + .45 * night})` : `hsla(${c.h},${c.s}%,${clamp(c.l - 30 + night * 6, 0, 100)}%,.6)`;
+        ctx.fillRect(x + gap / 2 + w * (.12 + q * .76 / cols), top + h * (.08 + r * .84 / rows), w * .5 / cols, h * .5 / rows);
+      }
+    }
+    if (pal.neon > .3 && i === 3 && hash(seed + .2) > .6) {   // enseigne au néon
+      const hh = (hash(seed + .4) * 360) | 0, blink = Math.sin(tn * 3 + seed) > -.2 ? 1 : .2;
+      ctx.fillStyle = `hsla(${hh},95%,65%,${.8 * pal.neon * blink})`; ctx.fillRect(x + gap / 2 + w * .1, top + h * .3, w * .8, Math.max(2, h * .08));
+      ctx.fillStyle = `hsla(${hh},95%,65%,${.25 * pal.neon * blink})`; ctx.fillRect(x + gap / 2, top + h * .25, w, Math.max(4, h * .18));
+    }
+  }
+}
+
+function drawRoad(ctx, S, pal, ground, night) {
+  const { W, H, t, tn } = S;
+  ctx.fillStyle = cityCol(pal.road, -4); ctx.fillRect(0, ground, W, H - ground);
+  ctx.fillStyle = cityCol(pal.road, 18); ctx.fillRect(0, ground, W, H * .012);                                                    // trottoir du fond
+  ctx.fillStyle = cityCol(pal.road); ctx.fillRect(0, ground + H * .03, W, H * .10);                                               // chaussée
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; const dash = W * .04, off = ((t * .18) % 1) * dash * 2; for (let x = -off; x < W; x += dash * 2) ctx.fillRect(x, ground + H * .078, dash, Math.max(1, H * .003));   // ligne médiane
+  ctx.fillStyle = cityCol(pal.road, 14); ctx.fillRect(0, ground + H * .13, W, H - ground - H * .13);                                // trottoir avant
+  for (let x = W * .08; x < W; x += W * .22) {   // lampadaires, allumés la nuit
+    ctx.fillStyle = cityCol(pal.road, -12); ctx.fillRect(x - 1.5, ground - H * .07, 3, H * .1); ctx.fillRect(x - H * .012, ground - H * .07, H * .024, H * .006);
+    if (night > .2) { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, ground - H * .07, 0, x, ground - H * .07, H * .09); g.addColorStop(0, `rgba(255,220,150,${.35 * night})`); g.addColorStop(1, 'rgba(255,220,150,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, ground - H * .07, H * .09, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+  }
+}
+
+function renderCity(ctx, S, D) {
+  const { W, H, t, sky, wx, disp, layers, events } = S, g = cityGeometry(H), horizon = g.horizon, ground = g.ground, night = 1 - sky.day;
+  const pal = cityPalette(cityBiomeAt(t));
+  D.drawSky(ctx, S, horizon, { top: cityCol(pal.sky.top), bottom: cityCol(pal.sky.bottom), floorTo: ground });
+  const { src, srcVis } = D.drawBodies(ctx, S, horizon);
+  D.drawStreaks(ctx, S, horizon);
+  for (const e of events) if (BEHIND_CLOUDS.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon, wTop: ground }, sky);
+  D.drawClouds(ctx, S, horizon);
+  if (wx.rainbow > 0 && sky.day > .3 && src && src.kind === 'sun') D.drawRainbow(ctx, wx.rainbow * sky.day, src.x, horizon, W, H);
+  // Lueur urbaine la nuit, brume de jour
+  { const hz = ctx.createLinearGradient(0, horizon - H * .1, 0, ground); hz.addColorStop(0, cityCol(pal.sky.bottom, -night * 50, 0)); hz.addColorStop(1, pal.neon > .3 ? `hsla(${pal.win.h},60%,40%,${.35 * night + .15})` : cityCol(pal.layers[0], 10 - night * 30, .9)); ctx.fillStyle = hz; ctx.fillRect(0, horizon - H * .1, W, ground - horizon + H * .1); }
+  for (const e of events) if ((TYPES[e.type].where || 'sky') === 'sky' && !BEHIND_CLOUDS.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon, wTop: ground }, sky);
+  const geom = i => ({ y0: horizon + (ground - horizon) * (.3 + i * .233), amp: H * layers[i].h * 1.5 * (.85 + disp[layers[i].band] * .15) });
+  layers.forEach((L, i) => { const { y0, amp } = geom(i); drawStreet(ctx, S, L, i, y0, amp, pal.layers[Math.min(i, 3)], pal, night); if (i === 1 && wx.w === 'fog') D.drawFog(ctx, wx.k, ground, W, H); });
+  drawRoad(ctx, S, pal, ground, night);
+  for (const e of events) if (CITY_TYPES.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon, wTop: ground, night }, sky);
+  if (wx.w === 'rain' || wx.w === 'storm') D.drawRain(ctx, t, wx.k, S.wind, wx.w === 'storm', W, H);
+  if (wx.w === 'snow') D.drawSnow(ctx, t, wx.k, W, H);
+  return { src, srcVis, horizon, wTop: ground + H * .16, layerGeom: geom };
+}
+
+// ---- src/scenes/sea.js
+
+
+
+// Scène « Océan » : au fond des océans. Les plans de loudness deviennent des reliefs sous-marins, la lumière tombe
+// de la surface, la neige marine dérive, les bulles montent. Biomes : récif, forêt de kelp, abysses.
+const SEA_BIOMES = ['reef', 'kelp', 'abyss'];
+const seaCycle = makeBiomeCycle(SEA_BIOMES, 300, 73);
+const seaBiomeAt = t => seaCycle.at(t);
+const seaGeometry = H => ({ surface: H * .04, floor: H * .9 });
+const seaCol = (c, dl = 0, a = 1) => `hsla(${c.h},${c.s}%,${clamp(c.l + dl, 0, 100)}%,${a})`;
+const SEA_PAL = {
+  reef:  { water: { top: { h: 190, s: 70, l: 55 }, bottom: { h: 205, s: 70, l: 22 } }, layers: [{ h: 200, s: 40, l: 30 }, { h: 335, s: 28, l: 36 }, { h: 22, s: 38, l: 40 }, { h: 290, s: 24, l: 32 }], floor: { h: 40, s: 30, l: 52 }, flora: 'coral', glow: 0, light: 1 },
+  kelp:  { water: { top: { h: 165, s: 45, l: 42 }, bottom: { h: 180, s: 55, l: 14 } }, layers: [{ h: 175, s: 35, l: 26 }, { h: 165, s: 40, l: 22 }, { h: 150, s: 40, l: 20 }, { h: 140, s: 40, l: 16 }], floor: { h: 90, s: 25, l: 24 }, flora: 'kelp', glow: 0, light: .7 },
+  abyss: { water: { top: { h: 220, s: 60, l: 12 }, bottom: { h: 230, s: 70, l: 3 } }, layers: [{ h: 225, s: 30, l: 10 }, { h: 228, s: 30, l: 8 }, { h: 232, s: 30, l: 6 }, { h: 235, s: 30, l: 4 }], floor: { h: 230, s: 25, l: 8 }, flora: 'vent', glow: 1, light: .15 },
+};
+function seaPalette({ b, prev, k }) {
+  const A = SEA_PAL[prev] || SEA_PAL[b], B = SEA_PAL[b];
+  return { water: { top: mix(A.water.top, B.water.top, k), bottom: mix(A.water.bottom, B.water.bottom, k) }, layers: B.layers.map((c, i) => mix(A.layers[i], c, k)), floor: mix(A.floor, B.floor, k), flora: k < .5 ? A.flora : B.flora, glow: lerp(A.glow, B.glow, k), light: lerp(A.light, B.light, k), b, k };
+}
+
+function drawWaterBackdrop(ctx, S, pal, day) {
+  const { W, H, tn, wx } = S, g = ctx.createLinearGradient(0, 0, 0, H);
+  const dim = -(1 - day) * 14 - wx.dark * 10;
+  g.addColorStop(0, seaCol(pal.water.top, dim)); g.addColorStop(1, seaCol(pal.water.bottom, dim)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // Rayons de lumière depuis la surface, qui ondulent lentement
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 7; i++) {
+    const x = W * (.05 + i * .14) + Math.sin(tn * .3 + i) * W * .03, wdt = W * (.03 + hash(i + .3) * .04), sway = Math.sin(tn * .2 + i * 1.7) * W * .08;
+    const a = (.06 + .05 * Math.sin(tn * .5 + i * 2)) * pal.light * (.3 + .7 * day);
+    const rg = ctx.createLinearGradient(0, 0, 0, H * .8); rg.addColorStop(0, `rgba(220,245,255,${a})`); rg.addColorStop(1, 'rgba(220,245,255,0)');
+    ctx.fillStyle = rg; ctx.beginPath(); ctx.moveTo(x - wdt, 0); ctx.lineTo(x + wdt, 0); ctx.lineTo(x + wdt * 3 + sway, H * .85); ctx.lineTo(x - wdt * 3 + sway, H * .85); ctx.closePath(); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// Neige marine et bulles : positions déduites du temps du morceau, cohérentes après un saut
+function drawParticles(ctx, S, pal) {
+  const { W, H, t, tn, wx } = S, drift = wx.w === 'storm' ? 2.5 : 1;
+  ctx.fillStyle = 'rgba(230,240,255,.35)';
+  for (let i = 0; i < 70; i++) { const sp = .3 + hash(i + 11) * .5, y = ((t * sp * .02 * drift + hash(i)) % 1) * H, x = ((hash(i + 99) + Math.sin(t * .3 + i) * .01 * drift) % 1 + 1) % 1 * W; ctx.fillRect(x, y, 1.5, 1.5); }
+  for (let i = 0; i < 24; i++) { const sp = .5 + hash(i + 31) * .8, ph = (t * sp * .08 + hash(i + 3)) % 1, x = ((hash(i + 57) + Math.sin(tn * 2 + i) * .006) % 1 + 1) % 1 * W, y = H * (1.02 - ph * 1.05), r = 1.5 + hash(i + 5) * 3 * ph; ctx.strokeStyle = 'rgba(220,240,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke(); }
+  if (pal.glow > 0) { ctx.globalCompositeOperation = 'lighter'; for (let i = 0; i < 40; i++) { const a = pal.glow * (.3 + .7 * Math.pow(Math.max(0, Math.sin(tn * (1 + hash(i) * 2) + i)), 3)); const x = hash(i + 77) * W, y = H * (.3 + hash(i + 88) * .65); ctx.fillStyle = `hsla(${180 + hash(i + 2) * 80},90%,70%,${a * .8})`; ctx.beginPath(); ctx.arc(x, y, 1.5 + hash(i + 4) * 2, 0, TAU); ctx.fill(); } ctx.globalCompositeOperation = 'source-over'; }   // bioluminescence
+}
+
+// Flore du premier plan, le long de l'axe du temps du plan proche
+function drawFlora(ctx, S, pal, floor) {
+  const { W, H, t, tn } = S, win = 45, t0 = t - win / 2, spacing = 2.2;
+  for (let k = Math.floor(t0 / spacing); k <= Math.ceil((t0 + win) / spacing); k++) {
+    const tt = k * spacing + hash(k * 1.3) * spacing * .8, x = (tt - t0) / win * W; if (x < -W * .05 || x > W * 1.05) continue;
+    const size = H * (.04 + hash(k + .5) * .06), y = floor + H * .005 + hash(k + .9) * H * .03, sway = Math.sin(tn * .8 + k) * .12;
+    if (pal.flora === 'kelp') { ctx.strokeStyle = `hsla(${95 + hash(k) * 30},45%,${28 + hash(k + .2) * 12}%,.9)`; ctx.lineWidth = Math.max(2, size * .08); ctx.beginPath(); ctx.moveTo(x, y); for (let s = 1; s <= 6; s++) ctx.lineTo(x + Math.sin(tn * .9 + k + s * .8) * size * .18 * s, y - size * .45 * s); ctx.stroke(); for (let s = 1; s <= 5; s++) { ctx.fillStyle = `hsla(${95 + hash(k) * 30},45%,${30 + s * 2}%,.8)`; ctx.beginPath(); ctx.ellipse(x + Math.sin(tn * .9 + k + s * .8) * size * .18 * s + size * .1, y - size * .45 * s, size * .16, size * .06, .5 + sway, 0, TAU); ctx.fill(); } }
+    else if (pal.flora === 'coral') { const hh = [340, 20, 300, 170, 45][k % 5 < 0 ? 0 : Math.abs(k) % 5]; ctx.strokeStyle = `hsla(${hh},65%,55%,.95)`; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(2, size * .12); for (let br = -2; br <= 2; br++) { ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + br * size * .25 + sway * size, y - size * .5, x + br * size * .4 + sway * size, y - size * (.7 + hash(k + br) * .4)); ctx.stroke(); } ctx.fillStyle = `hsla(${(hh + 40) % 360},70%,60%,.9)`; ctx.beginPath(); ctx.ellipse(x + size * .6, y - size * .1, size * .35, size * .2, 0, Math.PI, 0); ctx.fill(); }
+    else { ctx.fillStyle = 'rgba(20,24,40,.95)'; ctx.beginPath(); ctx.moveTo(x - size * .3, y); ctx.lineTo(x - size * .1, y - size * .9); ctx.lineTo(x + size * .1, y - size * .9); ctx.lineTo(x + size * .3, y); ctx.fill(); if (hash(k + .4) > .5) { ctx.globalCompositeOperation = 'lighter'; for (let s = 0; s < 4; s++) { const a = .3 + .3 * Math.sin(tn * 3 + s + k); ctx.fillStyle = `rgba(120,200,255,${a * .5})`; ctx.beginPath(); ctx.arc(x + Math.sin(tn + s) * size * .1, y - size * (1 + s * .25), size * (.12 - s * .02), 0, TAU); ctx.fill(); } ctx.globalCompositeOperation = 'source-over'; } }   // cheminée hydrothermale
+  }
+}
+
+function renderSea(ctx, S, D) {
+  const { W, H, t, sky, wx, disp, layers, events } = S, g = seaGeometry(H), floor = g.floor, pal = seaPalette(seaBiomeAt(t)), day = .35 + .65 * sky.day;
+  drawWaterBackdrop(ctx, S, pal, day);
+  // Reliefs sous-marins : du lointain sombre au proche, un peu plus clairs vers le haut là où la lumière arrive
+  const geom = i => ({ y0: H * (.62 + i * .095), amp: H * layers[i].h * 1.2 * (.85 + disp[layers[i].band] * .15) });
+  layers.forEach((L, i) => { const { y0, amp } = geom(i), c = pal.layers[Math.min(i, 3)]; D.drawLayer(ctx, L, t, { ...S, horizon: y0, wTop: floor }, { day, dusk: 0 }, i, { y0, amp, colors: { h: c.h, s: c.s, l: c.l + 6 * day } }); });
+  ctx.fillStyle = seaCol(pal.floor, -(1 - day) * 12); ctx.fillRect(0, floor, W, H - floor);
+  ctx.fillStyle = seaCol(pal.floor, 6, .5); for (let i = 0; i < 4; i++) { const y = floor + H * (.02 + i * .022); ctx.beginPath(); for (let x = 0; x <= W; x += 8) ctx.lineTo(x, y + Math.sin(x * .02 + t * .6 + i) * H * .004); ctx.lineTo(W, y + H * .012); ctx.lineTo(0, y + H * .012); ctx.closePath(); ctx.fill(); }
+  drawFlora(ctx, S, pal, floor);
+  for (const e of events) if (SEA_TYPES.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon: H, wTop: floor, biome: pal.b }, sky);
+  drawParticles(ctx, S, pal);
+  return { src: null, srcVis: 0, horizon: H * .5, wTop: floor - H * .025, layerGeom: geom };
+}
+
 // ---- src/main.js
+
+
+
 
 
 
@@ -2942,7 +3323,7 @@ function setScene(id, silent) {
   syncSceneUi(); if (!silent) plPanel.announce({ name: `Scène : ${sceneById(sceneId).name}` });
 }
 function syncSceneUi() { const sel = document.getElementById('sceneSel'); if (sel) sel.value = sceneId; const auto = document.getElementById('autoScene'); if (auto) auto.checked = autoScene; if (typeof controls !== 'undefined' && controls) controls.setScene(sceneById(sceneId).name); }
-const RENDER = { horizon: renderHorizon, valley: renderValley };
+const RENDER = { horizon: renderHorizon, valley: renderValley, city: renderCity, sea: renderSea };
 // Dessins fournis aux scènes
 const D = {
   drawSky, drawBodies, drawStreaks, drawClouds, drawEvent, drawLayer, drawRain, drawSnow, drawFog, drawAurora, drawRainbow,
@@ -3060,7 +3441,7 @@ document.addEventListener('keydown', e => {
   idleT = now();
 });
 document.addEventListener('touchstart', () => { idleT = now(); }, { passive: true });
-if (location.search.includes('test')) { window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; }; window.__feedLive = (t, smp) => { LIVE.feed(t, smp); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }; window.__state = () => ({ live: A === LIVE, tracks: playlist.tracks.map(t => t.name), index: playlist.index, src: audio.currentSrc, scene: sceneId, events: events.map(e => e.type) }); window.__setScene = setScene; }
+if (location.search.includes('test')) { window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; }; window.__feedLive = (t, smp) => { LIVE.feed(t, smp); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }; window.__state = () => ({ live: A === LIVE, tracks: playlist.tracks.map(t => t.name), index: playlist.index, src: audio.currentSrc, scene: sceneId, events: events.map(e => e.type) }); window.__setScene = setScene; window.__biomes = t => ({ city: cityBiomeAt(t).b, sea: seaBiomeAt(t).b }); }
 requestAnimationFrame(frame);
 
 })();

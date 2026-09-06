@@ -45,7 +45,7 @@ test('spawn crée un passage hors écran, avec ses paramètres, pour chaque type
   for (const k in TYPES) {
     const e = spawn(k, rng, 0);
     assert.equal(e.type, k);
-    assert.ok(e.x <= -.1 || e.x >= 1.1 || ['shooting', 'fish', 'whale', 'fireworks', 'rocket', 'dolphins'].includes(k), `${k} entre par un bord, sauf ce qui surgit sur place`);
+    assert.ok(e.x <= -.1 || e.x >= 1.1 || ['shooting', 'fish', 'whale', 'fireworks', 'rocket', 'dolphins', 'jelly'].includes(k), `${k} entre par un bord, sauf ce qui surgit sur place`);
   }
   const bird = spawn('bird', rng, 0);
   assert.ok(SPECIES.includes(bird.sp));

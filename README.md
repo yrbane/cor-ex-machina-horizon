@@ -18,7 +18,7 @@ python -m http.server 8080
 
 puis ouvrir `http://localhost:8080/` et cliquer sur la page. Servie en HTTP, la page analyse le son en temps réel. Ouverte directement depuis le disque, elle suit l'analyse précalculée, ou le son si on charge le fichier avec la touche `o`.
 
-Deux scènes sur le même moteur : Horizon, au bord de l'eau, et Vallée, entre des montagnes dont les biomes alternent. La scène change à chaque nouveau morceau, ou avec `s`.
+Quatre scènes sur le même moteur : Horizon, au bord de l'eau ; Vallée, entre des montagnes verdoyantes, désertiques ou enneigées ; Ville, moderne, ancienne ou sous les néons, avec son trafic et ses passants ; Océan, du récif aux abysses, avec sa faune. Les biomes alternent, la scène change à chaque nouveau morceau, ou avec `s`.
 
 Commandes : `c` affiche la barre de contrôles, `p` ouvre la playlist pour lire d'autres morceaux, clic dans l'eau pour lire ou mettre en pause, clic sur le paysage pour sauter au temps visé, molette pour avancer ou reculer, flèches, Page haut et bas, Début et Fin, `f` pour le plein écran, `?` pour la console de documentation et de statistiques.
 
@@ -45,7 +45,7 @@ Aucune dépendance : Node 20 ou plus suffit. Les modules de `src/` sont des modu
 | `src/controls.js` | barre de contrôles sur potard |
 | `vendor/potard/` | [potard](https://github.com/yrbane/potard), contrôles audio en Web Components, MIT, embarqués dans le fichier final |
 | `src/waveform.js` | sources de signal pour la forme d'onde du premier plan, et le bandeau qui les combine |
-| `src/scenes/*.js` | registre des scènes, ciel commun, scène Horizon, scène Vallée et ses biomes |
+| `src/scenes/*.js` | registre des scènes, cycle de biomes, ciel commun, scènes Horizon, Vallée, Ville et Océan |
 | `src/draw/*.js` | dessins : astres, paysage, passages, nuages en sprites, météo, eau, forme d'onde, console |
 | `src/main.js` | câblage de la page : audio, boucle de rendu, interactions |
 
