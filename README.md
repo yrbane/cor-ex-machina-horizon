@@ -33,7 +33,8 @@ Aucune dépendance : Node 20 ou plus suffit. Les modules de `src/` sont des modu
 | `src/sky.js` | cycle du soleil et de la lune |
 | `src/weather.js` | météo par segments, reproductible |
 | `src/events.js` | règles d'apparition et mouvements des passages |
-| `src/draw/*.js` | dessins : astres, paysage, passages, météo, eau, console |
+| `src/waveform.js` | sources de signal pour la forme d'onde du premier plan, et le bandeau qui les combine |
+| `src/draw/*.js` | dessins : astres, paysage, passages, météo, eau, forme d'onde, console |
 | `src/main.js` | câblage de la page : audio, boucle de rendu, interactions |
 
 Les données d'analyse sont produites par `tools/extract.py` à partir du master WAV, avec ffmpeg et numpy :

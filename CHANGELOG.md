@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.1.0 — 2026-09-06 · « Onde »
+
+- Forme d'onde au premier plan, sur l'eau, en petit : le signal audio en direct qui défile quand la page a accès au son, l'enveloppe des crêtes précalculée sinon.
+- Architecture : une interface de source de signal avec deux implémentations, un rendu séparé, un bandeau qui choisit la source. Cinq tests.
+
 ## 1.0.4 — 2026-09-06 · « Banderole »
 
 - Le texte « EMT » suit l'ondulation de la banderole : chaque lettre est posée à sa hauteur locale et inclinée selon la pente, dans l'ordre de lecture quel que soit le sens de vol.

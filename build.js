@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const ORDER = ['src/util.js', 'src/palette.js', 'src/analysis.js', 'src/sky.js', 'src/weather.js', 'src/events.js', 'src/draw/bodies.js', 'src/draw/landscape.js', 'src/draw/events.js', 'src/draw/weather.js', 'src/draw/water.js', 'src/draw/console.js', 'src/main.js'];
+const ORDER = ['src/util.js', 'src/palette.js', 'src/analysis.js', 'src/sky.js', 'src/weather.js', 'src/events.js', 'src/draw/bodies.js', 'src/draw/landscape.js', 'src/draw/events.js', 'src/draw/weather.js', 'src/draw/water.js', 'src/draw/console.js', 'src/draw/waveform.js', 'src/waveform.js', 'src/main.js'];
 
 const strip = src => src
   .replace(/^import .*?;\s*$/gm, '')

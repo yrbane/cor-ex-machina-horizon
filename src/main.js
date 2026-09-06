@@ -10,6 +10,7 @@ import { drawEvent } from './draw/events.js';
 import { drawRain, drawSnow, drawFog, drawAurora, drawRainbow, Lightning } from './draw/weather.js';
 import { drawWater } from './draw/water.js';
 import { Console } from './draw/console.js';
+import { RingWaveSource, EnvelopeWaveSource, WaveformStrip } from './waveform.js';
 
 // Câblage de la page : audio, analyse, boucle de rendu, interactions, console
 const DATA = JSON.parse(document.getElementById('data').textContent);
@@ -52,12 +53,16 @@ function analyse() {
   out.kickE = e;
   if (finite) {
     silentSince = now(); let lo = 40;
+    analyser.getFloatTimeDomainData(timeBuf); liveWave.push(timeBuf);
     for (let i = 0; i < NSPEC; i++) { const hi = 40 * Math.pow(300, (i + 1) / NSPEC); let s = 0, n = 0; for (let j = Math.max(1, Math.floor(lo / res)); j <= Math.max(Math.floor(lo / res) + 1, Math.floor(hi / res)); j++) if (j < freq.length && Number.isFinite(freq[j])) { s += freq[j]; n++; } const v = n ? s / n : -120; specRange.hi = Math.max(v, specRange.hi - .02); specRange.lo = Math.min(v, specRange.lo + .02); spec[i] = clamp((v - specRange.lo) / Math.max(20, specRange.hi - specRange.lo), 0, 1); lo = hi; }
   }
   live = finite || now() - silentSince < 1.5;
   return live ? out : null;
 }
 const kickDet = new KickDetector(), dataKick = new DataKick(A);
+// Forme d'onde du premier plan : signal en direct quand la page y a accès, enveloppe précalculée sinon
+const liveWave = new RingWaveSource(900, 30), timeBuf = new Float32Array(2048);
+const waveStrip = new WaveformStrip(liveWave, new EnvelopeWaveSource(A, 3), 240);
 
 // --- rendu : 30 images/s maxi, résolution plafonnée et adaptée à la machine
 const cv = document.getElementById('c'), ctx = cv.getContext('2d', { alpha: false, desynchronized: true });
@@ -164,6 +169,7 @@ function frame() {
   if (wx.w === 'snow') drawSnow(ctx, t, wx.k, W, H);
   drawWater(ctx, back, bctx, cv, { W, H, horizon, wTop, tn, sky, wx, lvl, bass: disp.bass, hs, hb, src, srcVis, reduced: REDUCED });
   for (const e of events) if (WATER_TYPES.includes(e.type)) drawEvent(ctx, e, scene, sky);
+  if (started) waveStrip.render(ctx, { x: W * .2, y: wTop + H * .012, w: W * .6, h: H * .05 }, t, hue);
   // Flashs, foudre, vignettage, indication de démarrage
   if (jumpFlash > .02) { ctx.fillStyle = `rgba(234,231,221,${jumpFlash * .1})`; ctx.fillRect(0, 0, W, H); }
   lightning.draw(ctx, tn, W, H);
