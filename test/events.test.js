@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES, BEHIND_CLOUDS, MAX_EVENTS, CROWD_TYPES, MAX_CROWD, CAR_MODELS, WALKER_LOOKS } from '../src/events.js';
+import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES, BEHIND_CLOUDS, MAX_EVENTS, CROWD_TYPES, MAX_CROWD, CAR_MODELS, WALKER_LOOKS, FISH_SPECIES, SEA_TYPES } from '../src/events.js';
 import { seeded } from './fakeCtx.js';
 
 const day = { day: 1, dusk: 0 }, night = { day: 0, dusk: 0 };
@@ -115,7 +115,7 @@ test('tickEvents respecte la liste des types admis par la scène', () => {
 
 test('en ville, la foule : voitures, passants et vélos ne comptent pas dans la limite de trois et peuvent être nombreux', () => {
   const rng = seeded(9), list = [];
-  assert.deepEqual(CROWD_TYPES, ['car', 'bike', 'walker']);
+  assert.deepEqual(CROWD_TYPES, ['car', 'bike', 'walker', 'fishes']);
   for (const t of ['bird', 'airliner', 'ufo']) list.push(spawn(t, rng, 0));
   assert.equal(canSpawn('car', day, clear, list), true, 'trois passages du ciel ne bloquent pas la rue');
   for (let i = 0; i < 6; i++) list.push(spawn('car', rng, 0, list));
@@ -148,4 +148,24 @@ test('tickEvents en ville fait naître une foule variée sans jamais dépasser s
   assert.ok(crowd.length <= MAX_CROWD && others.length <= MAX_EVENTS);
   assert.ok(crowd.length >= 4, `une vraie foule (${crowd.length})`);
   const cars = crowd.filter(e => e.type === 'car'); assert.equal(new Set(cars.map(e => e.model + '/' + e.col)).size, cars.length);
+});
+
+test('au fond des océans, les poissons sont nombreux et de toutes sortes, jamais deux pareils', () => {
+  assert.ok(FISH_SPECIES.length >= 12, 'beaucoup d’espèces'); assert.ok(TYPES.fishes.crowd >= 10 && TYPES.fishes.where === 'sea');
+  const rng = seeded(21), list = [];
+  for (let i = 0; i < 12; i++) list.push(spawn('fishes', rng, 0, list));
+  assert.equal(new Set(list.map(e => e.species + '/' + e.col)).size, 12); assert.ok(list.every(e => FISH_SPECIES.includes(e.species)));
+  const sea = [], allowed = SEA_TYPES;
+  for (let i = 0; i < 6000; i++) tickEvents(sea, .05, day, .003, clear, rng, i * .05, allowed);
+  const fishes = sea.filter(e => e.type === 'fishes');
+  assert.ok(fishes.length >= 5 && fishes.length <= TYPES.fishes.crowd, `un aquarium bien peuplé (${fishes.length})`);
+  assert.equal(new Set(fishes.map(e => e.species + '/' + e.col)).size, fishes.length);
+  assert.ok(fishes.every(f => f.y > .05 && f.y < .85));
+});
+
+test('parfois une baleine énorme traverse, seule, lentement, presque aussi grande que l’écran', () => {
+  assert.ok(TYPES.leviathan.single && TYPES.leviathan.where === 'sea' && TYPES.leviathan.rate < TYPES.seawhale.rate);
+  const e = spawn('leviathan', seeded(2), 0);
+  assert.ok(e.v <= .02, 'lente'); assert.ok(e.span >= .85 && e.span <= 1, 'presque toute la largeur');
+  assert.ok(Math.abs(e.x) > .5, 'naît hors écran, loin, à cause de sa taille');
 });

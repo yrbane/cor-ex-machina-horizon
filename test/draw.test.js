@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fakeCtx, seeded } from './fakeCtx.js';
-import { spawn, TYPES, CAR_MODELS, WALKER_LOOKS } from '../src/events.js';
+import { spawn, TYPES, CAR_MODELS, WALKER_LOOKS, FISH_SPECIES } from '../src/events.js';
 import { drawEvent } from '../src/draw/events.js';
 import { drawBody } from '../src/draw/bodies.js';
-import { layerValue, drawLayer, makeLayers } from '../src/draw/landscape.js';
+import { layerValue, drawLayer, makeLayers, timeAt } from '../src/draw/landscape.js';
 
 const scene = { W: 960, H: 600, horizon: 444, wTop: 480, tn: 12.3, hue: 0, disp: { sub: .5, bass: .5, mid: .5, high: .5 } };
 const day = { day: 1, dusk: 0, sun: { up: true }, moon: { up: false } }, night = { day: 0, dusk: 0, sun: { up: false }, moon: { up: true } };
@@ -96,4 +96,26 @@ test('chaque modèle de voiture et chaque allure de passant a son dessin, de jou
   for (const model of CAR_MODELS) { const e = spawn('car', rng, 0); e.model = model; e.x = .5; const ctx = fakeCtx(); drawEvent(ctx, e, rainy, night); assert.ok(ctx.count('fill') + ctx.count('fillRect') > 6, model); counts.add(ctx.count('fill') * 100 + ctx.count('fillRect')); }
   for (const look of WALKER_LOOKS) { const e = spawn('walker', rng, 0); e.look = look; e.x = .5; e.umb = true; const ctx = fakeCtx(); drawEvent(ctx, e, rainy, day); assert.ok(ctx.count('stroke') >= 2 && ctx.count('fill') >= 1, look); counts.add(ctx.count('fill') * 100 + ctx.count('stroke') + 7); }
   assert.ok(counts.size >= 10, 'des silhouettes bien différentes');
+});
+
+test('chaque espèce de poisson a sa silhouette, et la baleine géante couvre presque tout l’écran', () => {
+  const rng = seeded(4), sea = { ...scene, horizon: 600, wTop: 540 }, shapes = new Set();
+  for (const species of FISH_SPECIES) { const e = spawn('fishes', rng, 0); e.species = species; e.x = .5; const ctx = fakeCtx(); drawEvent(ctx, e, sea, day); assert.ok(ctx.count('fill') >= 2, species); shapes.add(ctx.count('fill') * 1000 + ctx.count('stroke') * 10 + ctx.count('arc')); }
+  assert.ok(shapes.size >= 8, 'des silhouettes bien différentes');
+  const w = spawn('leviathan', rng, 0); w.x = .5; w.y = .45; const ctx = fakeCtx(); drawEvent(ctx, w, sea, day);
+  const xs = ctx.calls.filter(c => c[0] === 'lineTo' || c[0] === 'moveTo' || c[0] === 'quadraticCurveTo').flatMap(c => c[0] === 'quadraticCurveTo' ? [c[3]] : [c[1]]);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > sea.W * .8, 'presque toute la largeur');
+});
+
+test('avec une avance, le bord droit de l’écran est en retard sur l’instant présent : le paysage se forme hors écran', () => {
+  const S = new Float32Array(200); S.fill(-39); for (let i = 190; i < 200; i++) S[i] = -20;   // du son seulement dans les cinq dernières secondes
+  const layers = makeLayers(S, .5), t = 100, L = layers[3];
+  const plain = fakeCtx(); drawLayer(plain, L, t, { ...scene }, day, 3);
+  assert.ok(plain.count('fill') === 1, 'sans avance, les dernières secondes apparaissent au bord droit');
+  const ahead = fakeCtx(); drawLayer(ahead, L, t, { ...scene, lead: .15 }, day, 3);
+  assert.equal(ahead.count('fill'), 0, 'avec une avance, rien n’est encore à l’écran : ça se forme hors champ');
+  const far = layers[0].win;
+  assert.ok(Math.abs(timeAt(layers, scene.W, scene.horizon + 1, t, { ...scene }, null) - t) < 1e-6, 'sans avance, le bord droit vise l’instant présent, comme au dessin');
+  assert.ok(Math.abs(timeAt(layers, 0, scene.horizon + 1, t, { ...scene }, null) - (t - far)) < 1e-6, 'le bord gauche vise une fenêtre en arrière');
+  assert.ok(Math.abs(timeAt(layers, scene.W, scene.horizon + 1, t, { ...scene, lead: .15 }, null) - (t - .15 * far)) < 1e-6, 'le bord droit vise l’instant présent moins l’avance');
 });

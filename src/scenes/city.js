@@ -22,7 +22,7 @@ export function cityPalette({ b, prev, k }) {
 
 // Une rue d'immeubles : la courbe du plan est échantillonnée par parcelles, chaque parcelle est un immeuble
 function drawStreet(ctx, S, L, i, y0, amp, c, pal, night) {
-  const { W, t, parX, tn } = S, depth = i / 3, px = W / 2 - parX * W * (.01 + depth * .05), t0 = t - L.win / 2;
+  const { W, t, parX, tn, lead = 0 } = S, depth = i / 3, px = W / 2 - parX * W * (.01 + depth * .05), t0 = t - L.win * (.5 + lead);
   const n = 18 + i * 8, bw = W / n, winCol = cityCol(pal.win), lit = night * (.55 + .3 * pal.neon);
   ctx.fillStyle = cityCol(c, -(1 - night) * 0 - night * 22);
   for (let k = 0; k < n; k++) {

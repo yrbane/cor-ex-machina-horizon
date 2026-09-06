@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 1.9.0 — 2026-09-06 · « L'aquarium »
+
+- Au fond des océans, les poissons sont nombreux et de toutes sortes : quatorze espèces, poisson-clown, chirurgien, poisson-ange, poisson-globe qui se gonfle, hippocampe, murène, rascasse volante, espadon, thon, poisson-papillon, mérou tacheté, barracuda, poisson-lune, discus, en dix couleurs, jusqu'à seize à la fois. Deux poissons présents en même temps n'ont jamais la même espèce dans la même couleur ; les petits font demi-tour, les grands filent.
+- Parfois une baleine géante traverse, seule, lentement, presque aussi large que l'écran, devant tout : sillons de la gorge, bernacles, évent, œil.
+- Pour un morceau inconnu, le relief se forme hors écran : l'instant présent est gardé à droite du bord, le paysage entre déjà formé. Le clic pour sauter dans le morceau suit la même règle que le dessin, il visait une demi-fenêtre trop loin.
+- Quatre tests de plus, 90 au total.
+
 ## 1.8.0 — 2026-09-06 · « La foule »
 
 - En ville, la rue est pleine : voitures, vélos et passants échappent à la limite de trois passages simultanés et ont leurs propres plafonds, huit voitures, trois vélos, sept passants, quatorze en tout. Le ciel garde sa règle.

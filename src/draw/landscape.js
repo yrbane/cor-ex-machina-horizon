@@ -27,11 +27,11 @@ export function layerValue(L, tt, step = L.step) {
   return .1 + .9 * clamp((d - L.lo) / (L.hi - L.lo), 0, 1);
 }
 
-// Silhouette d'un plan centrée sur l'instant présent, avec brume et lumière du jour ; rien n'est tracé si tout est plat
+// Silhouette d'un plan : l'instant présent au bord droit, une fenêtre de passé vers la gauche, avec brume et lumière du jour ; rien n'est tracé si tout est plat
 export function drawLayer(ctx, L, t, scene, sky, i, opts = {}) {
-  const { W, H, horizon, parX = 0, disp, hue = 0 } = scene, depth = i / 3;
+  const { W, H, horizon, parX = 0, disp, hue = 0, lead = 0 } = scene, depth = i / 3;   // lead : part de fenêtre gardée hors écran à droite, pour que le relief se forme hors champ
   const y0 = opts.y0 !== undefined ? opts.y0 : horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05);
-  const t0 = t - L.win / 2, amp = opts.amp !== undefined ? opts.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15), step = 3;
+  const t0 = t - L.win * (.5 + lead), amp = opts.amp !== undefined ? opts.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15), step = 3;
   const col = opts.colors;   // { h, s, l } fixes une teinte de scène ; sinon la palette dérivante de la bande
   let maxV = 0;
   ctx.beginPath(); ctx.moveTo(0, y0);
@@ -54,13 +54,14 @@ export function drawLayer(ctx, L, t, scene, sky, i, opts = {}) {
   ctx.strokeStyle = hsl(hue, L.band, 80, 55 + L.fog * 20 + dl, (.35 - L.fog * .25) * clamp(maxV * 3, 0, 1)); ctx.lineWidth = 1.2; ctx.stroke();
 }
 
-// Temps visé par un point de l'écran : le plan touché donne l'échelle, sinon le lointain
+// Temps visé par un point de l'écran, avec la même règle que le dessin : l'instant présent au bord droit, le passé vers la gauche.
+// Le plan touché donne l'échelle, sinon le lointain
 export function timeAt(layers, xs, ys, t, scene, geom) {
-  const { W, H, horizon, parX = 0, disp } = scene;
+  const { W, H, horizon, parX = 0, disp, lead = 0 } = scene;
   for (let i = layers.length - 1; i >= 0; i--) {
     const L = layers[i], depth = i / 3, gg = geom ? geom(i) : null, y0 = gg ? gg.y0 : horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05), amp = gg ? gg.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15);
-    const tt = t + (xs - px) / W * L.win, v = layerValue(L, tt);
+    const tt = t - L.win * (.5 + lead) + (xs - px) / W * L.win, v = layerValue(L, tt);
     if (ys >= y0 - v * amp && ys <= y0) return tt;
   }
-  return t + (xs - W / 2) / W * layers[0].win;
+  return t - layers[0].win * (.5 + lead) + (xs - W / 2) / W * layers[0].win;
 }

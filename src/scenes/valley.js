@@ -9,7 +9,7 @@ const bcol = (c, dl = 0, a = 1) => `hsla(${c.h},${c.s}%,${clamp(c.l + dl, 0, 100
 
 // Végétation au premier plan : silhouettes posées le long de l'axe du temps du plan proche, elles défilent avec lui
 function drawVegetation(ctx, S, pal, floor) {
-  const { W, H, t } = S, win = 45, t0 = t - win / 2, spacing = 2.6;
+  const { W, H, t, lead = 0 } = S, win = 45, t0 = t - win * (.5 + lead), spacing = 2.6;
   const first = Math.floor(t0 / spacing), last = Math.ceil((t0 + win) / spacing);
   for (let k = first; k <= last; k++) {
     const jitter = hash(k * 1.7) * spacing * .8, tt = k * spacing + jitter, x = (tt - t0) / win * W;
@@ -44,7 +44,7 @@ function drawFloor(ctx, S, pal, floor) {
 // Neige sur les crêtes des plans, dans le biome enneigé et en transition
 function drawSnowCaps(ctx, S, L, i, y0, amp, snowline) {
   if (snowline <= 0) return;
-  const { W, t } = S, t0 = t - L.win / 2, px = W / 2 - S.parX * W * (.01 + i / 3 * .05);
+  const { W, t, lead = 0 } = S, t0 = t - L.win * (.5 + lead), px = W / 2 - S.parX * W * (.01 + i / 3 * .05);
   ctx.fillStyle = `rgba(250,252,255,${.85 * snowline})`; ctx.beginPath(); let started = false;
   for (let x = 0; x <= W; x += 3) { const v = layerValue(L, t0 + (x - px) / W * L.win); const yy = y0 - v * amp; if (!started) { ctx.moveTo(x, yy); started = true; } else ctx.lineTo(x, yy); }
   for (let x = W; x >= 0; x -= 3) { const v = layerValue(L, t0 + (x - px) / W * L.win); ctx.lineTo(x, y0 - Math.max(0, v - .18 * snowline) * amp); }

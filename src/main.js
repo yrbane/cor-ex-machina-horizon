@@ -135,7 +135,7 @@ const D = {
 function frame() {
   const tn = now(); if (tn - lastDraw < 1 / FPS_CAP - .003) { requestAnimationFrame(frame); return; } lastDraw = tn;
   const w0 = performance.now(), dt = Math.min(.1, tn - lastT); lastT = tn;
-  const t = audio.currentTime || 0, playing = started && !audio.paused;
+  const t = audio.currentTime || 0, playing = started && !audio.paused, lead = A === LIVE ? .08 : 0;   // à l'écoute d'un inconnu, le relief se forme hors écran, à droite
   const parX = mouseX - .5, parY = mouseY - .5;
   let b = playing ? analyse() : null, kick = 0;
   if (b) { kick = kickDet.feed(b.kickE, tn); if (A === LIVE) { LIVE.feed(t, { loud: b.loud, peak: b.peak, sub: b.sub, bass: b.bass, mid: b.mid, high: b.high }); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } } }
@@ -146,7 +146,7 @@ function frame() {
   kickFlash *= Math.exp(-dt * 8); jumpFlash *= Math.exp(-dt * 4);
   const lvl = playing ? A.levelAt(t) : .3, sky = skyState(t), wx = weatherAt(t); curW = wx;
   const wind = REDUCED ? 0 : (.004 + lvl * .012) * (wx.w === 'storm' ? 2.5 : wx.w === 'rain' ? 1.6 : 1);
-  const S = { W, H, t, tn, dt, sky, wx, disp, lvl, hue, hb: (158 + hue) % 360, hs: (18 + hue) % 360, layers, events, parX, parY, wind, kickFlash, waves, stars, streaks, clouds, cloudSprites, rng, makeLayer, reduced: REDUCED };
+  const S = { W, H, t, tn, dt, sky, wx, disp, lvl, hue, lead, hb: (158 + hue) % 360, hs: (18 + hue) % 360, layers, events, parX, parY, wind, kickFlash, waves, stars, streaks, clouds, cloudSprites, rng, makeLayer, reduced: REDUCED };
   if (kick) onKick(kick, geo.horizon || H * .7);
   if (playing) { const before = events.length; tickEvents(events, dt, sky, wind, wx, rng, tn, allowedTypes(sceneId)); for (const e of events.slice(before)) stats.spawned[e.type] = (stats.spawned[e.type] || 0) + 1; }
   if (wx.w === 'storm' && wx.k > .3 && playing && rng() < dt / 7) lightning.strike(W, geo.horizon || H * .7, rng, tn);
@@ -218,7 +218,7 @@ let clickTimer;
 document.addEventListener('click', e => {
   clearTimeout(clickTimer);
   const xs = e.clientX / innerWidth * W, ys = e.clientY / innerHeight * H;
-  clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp }, geo.layerGeom)); }, 220);
+  clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp, lead: A === LIVE ? .08 : 0 }, geo.layerGeom)); }, 220);
 });
 document.addEventListener('dblclick', () => { clearTimeout(clickTimer); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); });
 addEventListener('wheel', e => { if (konsole.el.contains(e.target) || plPanel.el.contains(e.target) || controls.el.contains(e.target)) return; e.preventDefault(); if (started) seekTo(audio.currentTime + e.deltaY * (e.shiftKey ? .6 : .06)); }, { passive: false });

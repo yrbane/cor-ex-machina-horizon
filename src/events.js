@@ -39,7 +39,9 @@ export const TYPES = {
   walker:      { rate: 1 / 4,   label: 'passants', where: 'city', crowd: 7 },
   tram:        { rate: 1 / 240, label: 'tramways', where: 'city', single: true },
   // Fond des océans
-  school:      { rate: 1 / 25,  label: 'bancs de poissons', where: 'sea' },
+  school:      { rate: 1 / 15,  label: 'bancs de poissons', where: 'sea' },
+  fishes:      { rate: 1 / 1,   label: 'poissons de toutes sortes', where: 'sea', crowd: 16 },
+  leviathan:   { rate: 1 / 700, label: 'baleines géantes', where: 'sea', single: true },
   shark:       { rate: 1 / 120, label: 'requins', where: 'sea', single: true },
   turtle:      { rate: 1 / 90,  label: 'tortues', where: 'sea' },
   jelly:       { rate: 1 / 40,  label: 'méduses', where: 'sea' },
@@ -62,11 +64,16 @@ export const CROWD_TYPES = Object.keys(TYPES).filter(k => TYPES[k].crowd);
 export const CAR_MODELS = ['sedan', 'hatch', 'van', 'pickup', 'sports', 'taxi', 'police', 'cabrio', 'limo', 'suv'];
 export const CAR_COLORS = ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152', '#ff8c42', '#7fd1ff', '#c0392b'];
 export const WALKER_LOOKS = ['coat', 'dress', 'hoodie', 'suit', 'kid', 'elder', 'runner', 'hat'];
+export const FISH_SPECIES = ['clown', 'tang', 'angel', 'puffer', 'seahorse', 'eel', 'lion', 'sword', 'tuna', 'butterfly', 'grouper', 'barracuda', 'sunfish', 'discus'];
+export const FISH_COLORS = ['#ff8c42', '#2f7fe8', '#f2c230', '#8ff0d0', '#c9a0ff', '#e8402f', '#9ad0ff', '#1fbf8a', '#ffd27a', '#c8d3e0'];
+const FISH_FIXED = { clown: '#ff8c42', tang: '#2f7fe8', butterfly: '#f2c230', tuna: '#3a4a66', barracuda: '#c8d3e0', sword: '#4a5a80' };
+const FISH_SPEED = { seahorse: [.003, .006], puffer: [.01, .02], eel: [.015, .025], sunfish: [.008, .014], grouper: [.012, .02], tuna: [.06, .09], barracuda: [.05, .08], sword: [.07, .1] };
+const FISH_SIZE = { sunfish: [1.8, 2.4], grouper: [1.5, 2], tuna: [1.2, 1.6], sword: [1.3, 1.7], barracuda: [1.1, 1.5], seahorse: [.7, 1], eel: [1, 1.4] };
 export const WALKER_COLORS = ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5', '#1fbf8a', '#ff8c42', '#22252f'];
 // Choisit un couple (a, b) qui n'est porté par aucun des passages déjà présents ; à défaut, n'importe lequel
-function distinctPair(rng, existing, keyA, keyB, A, B) {
+function distinctPair(rng, existing, keyA, keyB, A, B, ok = () => true) {
   const used = new Set(existing.map(e => e[keyA] + '/' + e[keyB])), free = [];
-  for (const a of A) for (const b of B) if (!used.has(a + '/' + b)) free.push([a, b]);
+  for (const a of A) for (const b of B) if (ok(a, b) && !used.has(a + '/' + b)) free.push([a, b]);
   return free.length ? free[Math.floor(rng() * free.length)] : [pick(rng, A), pick(rng, B)];
 }
 
@@ -133,7 +140,7 @@ export function spawn(type, rng, tn, existing = []) {
     case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
     case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
     case 'submarine': Object.assign(e, { d: rnd(rng, .2, .6), v: rnd(rng, .004, .008) }); break;
-    case 'car': { const [model, col] = distinctPair(rng, existing.filter(o => o.type === 'car'), 'model', 'col', CAR_MODELS, CAR_COLORS); Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .07, .13) * (model === 'sports' ? 1.4 : model === 'limo' ? .8 : 1), model, col: model === 'taxi' ? '#f2c230' : model === 'police' ? '#f5f5f5' : col, size: rnd(rng, .9, 1.1) }); break; }
+    case 'car': { const [model, col] = distinctPair(rng, existing.filter(o => o.type === 'car'), 'model', 'col', CAR_MODELS, CAR_COLORS, (m, c) => (m !== 'taxi' || c === '#f2c230') && (m !== 'police' || c === '#f5f5f5')); Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .07, .13) * (model === 'sports' ? 1.4 : model === 'limo' ? .8 : 1), model, col, size: rnd(rng, .9, 1.1) }); break; }
     case 'bus': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
     case 'truck': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
     case 'bike': Object.assign(e, { lane: 2, v: rnd(rng, .03, .045), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230']) }); break;
@@ -149,6 +156,8 @@ export function spawn(type, rng, tn, existing = []) {
     case 'angler': Object.assign(e, { y: rnd(rng, .4, .8), v: rnd(rng, .01, .02), size: rnd(rng, .9, 1.2) }); break;
     case 'subhull': Object.assign(e, { y: rnd(rng, .15, .45), v: rnd(rng, .02, .03), size: rnd(rng, 1.4, 1.8) }); break;
     case 'seawhale': Object.assign(e, { y: rnd(rng, .1, .35), v: rnd(rng, .012, .018), size: rnd(rng, 1.6, 2.2) }); break;
+    case 'fishes': { const [species, col] = distinctPair(rng, existing.filter(o => o.type === 'fishes'), 'species', 'col', FISH_SPECIES, [...new Set([...FISH_COLORS, ...Object.values(FISH_FIXED)])], (sp, c) => !FISH_FIXED[sp] || FISH_FIXED[sp] === c); const sp = FISH_SPEED[species] || [.025, .05], sz = FISH_SIZE[species] || [.8, 1.3], low = species === 'seahorse' || species === 'eel' || species === 'grouper'; Object.assign(e, { species, col, v: rnd(rng, sp[0], sp[1]), size: rnd(rng, sz[0], sz[1]), y: low ? rnd(rng, .55, .8) : rnd(rng, .1, .7), shy: !FISH_SPEED[species] }); break; }
+    case 'leviathan': Object.assign(e, { y: rnd(rng, .3, .5), v: rnd(rng, .012, .018), span: rnd(rng, .88, .98), margin: .7, x: dir > 0 ? -.65 : 1.65 }); break;
   }
   return e;
 }
@@ -179,10 +188,11 @@ export function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null
       case 'jelly': e.y -= e.vy * dt * (.7 + .3 * Math.sin(age * 2 + e.ph)); e.x += Math.sin(age * .8 + e.ph) * .01 * dt; break;
       case 'school': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .7 + e.ph) * .03 * dt; if (rng() < dt / 6) e.dir *= -1; break;
       case 'diver': case 'turtle': case 'octopus': case 'angler': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .9 + e.ph) * .02 * dt; break;
+      case 'fishes': e.x += e.dir * e.v * dt; e.y = clamp(e.y + Math.sin(age * (e.species === 'seahorse' ? 1.5 : .8) + e.ph) * (e.species === 'seahorse' ? .04 : .02) * dt, .05, .85); if (e.shy && rng() < dt / 25) e.dir *= -1; break;   // les petits font demi-tour, les grands filent
       case 'drone': e.x += e.dir * e.v * dt; e.y += (Math.sin(age * 2.7 + e.ph) * .03 + Math.sin(age * 9) * .006) * dt; if (rng() < dt / 4) e.dir *= -1; break;
       case 'rocket': e.y -= e.v * dt; e.x += e.tilt * e.v * dt; if (tn - (e.lastSmoke || 0) > .12) { e.lastSmoke = tn; e.smoke.push({ x: e.x, y: e.y, a: 1 }); if (e.smoke.length > 24) e.smoke.shift(); } for (const p of e.smoke) p.a -= dt * .35; break;
       default: e.x += e.dir * e.v * dt;
     }
-    if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);   // la méduse sort par le haut, les autres par les côtés
+    const m = e.margin || .35; if (e.x < -m || e.x > 1 + m || e.y < -.15) list.splice(i, 1);   // la méduse sort par le haut, les autres par les côtés, la baleine géante a plus de marge
   }
 }

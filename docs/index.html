@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="cor-ex-machina-horizon 1.8.0">
+<meta name="generator" content="cor-ex-machina-horizon 1.9.0">
 <title>Cor ex machina, horizon</title>
 <style>
   :root { --ink: #eae7dd; --ink-2: #a9aec0; --ink-3: #6b7188; --line: rgba(255,255,255,.12); --series: #5aa0f0; --sub: #d95926; --bass: #199e70; --mid: #c98500; --high: #d55181; }
@@ -126,7 +126,7 @@
 <aside id="console" hidden>
   <button class="close" id="closeBtn">Fermer (Échap)</button>
   <header>
-    <h1>Cor ex machina, horizon <small>version 1.8.0</small></h1>
+    <h1>Cor ex machina, horizon <small>version 1.9.0</small></h1>
     <p id="stateLine"></p>
   </header>
   <nav class="tabs" role="tablist">
@@ -158,10 +158,10 @@
         <p class="lead"><label>Scène affichée <select id="sceneSel"></select></label></p>
         <p class="lead"><label><input type="checkbox" id="autoScene" checked> Changer de scène à chaque nouveau morceau</label> · <kbd>s</kbd> passe à la scène suivante</p>
         <h2>Ce que montre le paysage</h2>
-        <p class="lead">Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</p>
+        <p class="lead">Chaque plan est la courbe de loudness du set, l'instant présent au bord droit et le passé qui défile vers la gauche : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent. Pour un morceau inconnu, le relief se forme hors écran, à droite, et entre déjà formé.</p>
         <p class="lead">Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. Le cœur du set bat dans l'astre levé.</p>
         <p class="lead">La météo change par segments de 3 minutes : ciel clair, nuageux, pluie, orage avec foudre sur les coups de sub, brouillard, neige, aurore la nuit, arc-en-ciel après la pluie de jour.</p>
-        <p class="lead">Passent au hasard, trois au plus à la fois et jamais deux de la même sorte : oiseaux, vols en V, avions dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, drones, chasseurs, fusées, satellites, ovnis, feux d'artifice, ballons, cerfs-volants, papillons, chauves-souris, graines, voiliers, cargos, canards, dauphins, poissons, baleines, serpent de mer, périscope. En ville, la rue est pleine et échappe à cette règle : dix modèles de voitures en dix couleurs, tous différents à l'écran, bus, camions, vélos, huit allures de passants avec chien ou parapluie, tramways. Au fond des océans : bancs de poissons, requins, tortues, méduses, raies manta, plongeurs, pieuvres, baudroies la nuit, sous-marins, baleines au large.</p>
+        <p class="lead">Passent au hasard, trois au plus à la fois et jamais deux de la même sorte : oiseaux, vols en V, avions dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, drones, chasseurs, fusées, satellites, ovnis, feux d'artifice, ballons, cerfs-volants, papillons, chauves-souris, graines, voiliers, cargos, canards, dauphins, poissons, baleines, serpent de mer, périscope. En ville, la rue est pleine et échappe à cette règle : dix modèles de voitures en dix couleurs, tous différents à l'écran, bus, camions, vélos, huit allures de passants avec chien ou parapluie, tramways. Au fond des océans, la règle des trois ne vaut pas non plus pour les poissons : quatorze espèces en dix couleurs, jusqu'à seize à la fois, jamais deux pareils, et parfois une baleine géante qui prend tout l'écran. Aussi : bancs de poissons, requins, tortues, méduses, raies manta, plongeurs, pieuvres, baudroies la nuit, sous-marins, baleines au large.</p>
         <p class="lead">Quatre scènes sur le même moteur : Horizon au bord de l'eau, Vallée et ses biomes verdoyants, désertiques ou enneigés, Ville qui passe de la cité moderne à la vieille ville et aux néons, Océan qui va du récif à la forêt de kelp et aux abysses. Les biomes alternent toutes les quatre ou cinq minutes.</p>
         <p class="lead">Pour un morceau hors set, le paysage se construit en direct à l'écoute et l'analyse est gardée en cache : la fois suivante, le paysage est connu dès le départ.</p>
       </div>
@@ -1387,7 +1387,9 @@ const TYPES = {
   walker:      { rate: 1 / 4,   label: 'passants', where: 'city', crowd: 7 },
   tram:        { rate: 1 / 240, label: 'tramways', where: 'city', single: true },
   // Fond des océans
-  school:      { rate: 1 / 25,  label: 'bancs de poissons', where: 'sea' },
+  school:      { rate: 1 / 15,  label: 'bancs de poissons', where: 'sea' },
+  fishes:      { rate: 1 / 1,   label: 'poissons de toutes sortes', where: 'sea', crowd: 16 },
+  leviathan:   { rate: 1 / 700, label: 'baleines géantes', where: 'sea', single: true },
   shark:       { rate: 1 / 120, label: 'requins', where: 'sea', single: true },
   turtle:      { rate: 1 / 90,  label: 'tortues', where: 'sea' },
   jelly:       { rate: 1 / 40,  label: 'méduses', where: 'sea' },
@@ -1410,11 +1412,16 @@ const CROWD_TYPES = Object.keys(TYPES).filter(k => TYPES[k].crowd);
 const CAR_MODELS = ['sedan', 'hatch', 'van', 'pickup', 'sports', 'taxi', 'police', 'cabrio', 'limo', 'suv'];
 const CAR_COLORS = ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152', '#ff8c42', '#7fd1ff', '#c0392b'];
 const WALKER_LOOKS = ['coat', 'dress', 'hoodie', 'suit', 'kid', 'elder', 'runner', 'hat'];
+const FISH_SPECIES = ['clown', 'tang', 'angel', 'puffer', 'seahorse', 'eel', 'lion', 'sword', 'tuna', 'butterfly', 'grouper', 'barracuda', 'sunfish', 'discus'];
+const FISH_COLORS = ['#ff8c42', '#2f7fe8', '#f2c230', '#8ff0d0', '#c9a0ff', '#e8402f', '#9ad0ff', '#1fbf8a', '#ffd27a', '#c8d3e0'];
+const FISH_FIXED = { clown: '#ff8c42', tang: '#2f7fe8', butterfly: '#f2c230', tuna: '#3a4a66', barracuda: '#c8d3e0', sword: '#4a5a80' };
+const FISH_SPEED = { seahorse: [.003, .006], puffer: [.01, .02], eel: [.015, .025], sunfish: [.008, .014], grouper: [.012, .02], tuna: [.06, .09], barracuda: [.05, .08], sword: [.07, .1] };
+const FISH_SIZE = { sunfish: [1.8, 2.4], grouper: [1.5, 2], tuna: [1.2, 1.6], sword: [1.3, 1.7], barracuda: [1.1, 1.5], seahorse: [.7, 1], eel: [1, 1.4] };
 const WALKER_COLORS = ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5', '#1fbf8a', '#ff8c42', '#22252f'];
 // Choisit un couple (a, b) qui n'est porté par aucun des passages déjà présents ; à défaut, n'importe lequel
-function distinctPair(rng, existing, keyA, keyB, A, B) {
+function distinctPair(rng, existing, keyA, keyB, A, B, ok = () => true) {
   const used = new Set(existing.map(e => e[keyA] + '/' + e[keyB])), free = [];
-  for (const a of A) for (const b of B) if (!used.has(a + '/' + b)) free.push([a, b]);
+  for (const a of A) for (const b of B) if (ok(a, b) && !used.has(a + '/' + b)) free.push([a, b]);
   return free.length ? free[Math.floor(rng() * free.length)] : [pick(rng, A), pick(rng, B)];
 }
 
@@ -1481,7 +1488,7 @@ function spawn(type, rng, tn, existing = []) {
     case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
     case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
     case 'submarine': Object.assign(e, { d: rnd(rng, .2, .6), v: rnd(rng, .004, .008) }); break;
-    case 'car': { const [model, col] = distinctPair(rng, existing.filter(o => o.type === 'car'), 'model', 'col', CAR_MODELS, CAR_COLORS); Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .07, .13) * (model === 'sports' ? 1.4 : model === 'limo' ? .8 : 1), model, col: model === 'taxi' ? '#f2c230' : model === 'police' ? '#f5f5f5' : col, size: rnd(rng, .9, 1.1) }); break; }
+    case 'car': { const [model, col] = distinctPair(rng, existing.filter(o => o.type === 'car'), 'model', 'col', CAR_MODELS, CAR_COLORS, (m, c) => (m !== 'taxi' || c === '#f2c230') && (m !== 'police' || c === '#f5f5f5')); Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .07, .13) * (model === 'sports' ? 1.4 : model === 'limo' ? .8 : 1), model, col, size: rnd(rng, .9, 1.1) }); break; }
     case 'bus': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
     case 'truck': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
     case 'bike': Object.assign(e, { lane: 2, v: rnd(rng, .03, .045), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230']) }); break;
@@ -1497,6 +1504,8 @@ function spawn(type, rng, tn, existing = []) {
     case 'angler': Object.assign(e, { y: rnd(rng, .4, .8), v: rnd(rng, .01, .02), size: rnd(rng, .9, 1.2) }); break;
     case 'subhull': Object.assign(e, { y: rnd(rng, .15, .45), v: rnd(rng, .02, .03), size: rnd(rng, 1.4, 1.8) }); break;
     case 'seawhale': Object.assign(e, { y: rnd(rng, .1, .35), v: rnd(rng, .012, .018), size: rnd(rng, 1.6, 2.2) }); break;
+    case 'fishes': { const [species, col] = distinctPair(rng, existing.filter(o => o.type === 'fishes'), 'species', 'col', FISH_SPECIES, [...new Set([...FISH_COLORS, ...Object.values(FISH_FIXED)])], (sp, c) => !FISH_FIXED[sp] || FISH_FIXED[sp] === c); const sp = FISH_SPEED[species] || [.025, .05], sz = FISH_SIZE[species] || [.8, 1.3], low = species === 'seahorse' || species === 'eel' || species === 'grouper'; Object.assign(e, { species, col, v: rnd(rng, sp[0], sp[1]), size: rnd(rng, sz[0], sz[1]), y: low ? rnd(rng, .55, .8) : rnd(rng, .1, .7), shy: !FISH_SPEED[species] }); break; }
+    case 'leviathan': Object.assign(e, { y: rnd(rng, .3, .5), v: rnd(rng, .012, .018), span: rnd(rng, .88, .98), margin: .7, x: dir > 0 ? -.65 : 1.65 }); break;
   }
   return e;
 }
@@ -1527,11 +1536,12 @@ function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null) {
       case 'jelly': e.y -= e.vy * dt * (.7 + .3 * Math.sin(age * 2 + e.ph)); e.x += Math.sin(age * .8 + e.ph) * .01 * dt; break;
       case 'school': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .7 + e.ph) * .03 * dt; if (rng() < dt / 6) e.dir *= -1; break;
       case 'diver': case 'turtle': case 'octopus': case 'angler': e.x += e.dir * e.v * dt; e.y += Math.sin(age * .9 + e.ph) * .02 * dt; break;
+      case 'fishes': e.x += e.dir * e.v * dt; e.y = clamp(e.y + Math.sin(age * (e.species === 'seahorse' ? 1.5 : .8) + e.ph) * (e.species === 'seahorse' ? .04 : .02) * dt, .05, .85); if (e.shy && rng() < dt / 25) e.dir *= -1; break;   // les petits font demi-tour, les grands filent
       case 'drone': e.x += e.dir * e.v * dt; e.y += (Math.sin(age * 2.7 + e.ph) * .03 + Math.sin(age * 9) * .006) * dt; if (rng() < dt / 4) e.dir *= -1; break;
       case 'rocket': e.y -= e.v * dt; e.x += e.tilt * e.v * dt; if (tn - (e.lastSmoke || 0) > .12) { e.lastSmoke = tn; e.smoke.push({ x: e.x, y: e.y, a: 1 }); if (e.smoke.length > 24) e.smoke.shift(); } for (const p of e.smoke) p.a -= dt * .35; break;
       default: e.x += e.dir * e.v * dt;
     }
-    if (e.x < -.35 || e.x > 1.35 || e.y < -.15) list.splice(i, 1);   // la méduse sort par le haut, les autres par les côtés
+    const m = e.margin || .35; if (e.x < -m || e.x > 1 + m || e.y < -.15) list.splice(i, 1);   // la méduse sort par le haut, les autres par les côtés, la baleine géante a plus de marge
   }
 }
 
@@ -1649,11 +1659,11 @@ function layerValue(L, tt, step = L.step) {
   return .1 + .9 * clamp((d - L.lo) / (L.hi - L.lo), 0, 1);
 }
 
-// Silhouette d'un plan centrée sur l'instant présent, avec brume et lumière du jour ; rien n'est tracé si tout est plat
+// Silhouette d'un plan : l'instant présent au bord droit, une fenêtre de passé vers la gauche, avec brume et lumière du jour ; rien n'est tracé si tout est plat
 function drawLayer(ctx, L, t, scene, sky, i, opts = {}) {
-  const { W, H, horizon, parX = 0, disp, hue = 0 } = scene, depth = i / 3;
+  const { W, H, horizon, parX = 0, disp, hue = 0, lead = 0 } = scene, depth = i / 3;   // lead : part de fenêtre gardée hors écran à droite, pour que le relief se forme hors champ
   const y0 = opts.y0 !== undefined ? opts.y0 : horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05);
-  const t0 = t - L.win / 2, amp = opts.amp !== undefined ? opts.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15), step = 3;
+  const t0 = t - L.win * (.5 + lead), amp = opts.amp !== undefined ? opts.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15), step = 3;
   const col = opts.colors;   // { h, s, l } fixes une teinte de scène ; sinon la palette dérivante de la bande
   let maxV = 0;
   ctx.beginPath(); ctx.moveTo(0, y0);
@@ -1676,15 +1686,16 @@ function drawLayer(ctx, L, t, scene, sky, i, opts = {}) {
   ctx.strokeStyle = hsl(hue, L.band, 80, 55 + L.fog * 20 + dl, (.35 - L.fog * .25) * clamp(maxV * 3, 0, 1)); ctx.lineWidth = 1.2; ctx.stroke();
 }
 
-// Temps visé par un point de l'écran : le plan touché donne l'échelle, sinon le lointain
+// Temps visé par un point de l'écran, avec la même règle que le dessin : l'instant présent au bord droit, le passé vers la gauche.
+// Le plan touché donne l'échelle, sinon le lointain
 function timeAt(layers, xs, ys, t, scene, geom) {
-  const { W, H, horizon, parX = 0, disp } = scene;
+  const { W, H, horizon, parX = 0, disp, lead = 0 } = scene;
   for (let i = layers.length - 1; i >= 0; i--) {
     const L = layers[i], depth = i / 3, gg = geom ? geom(i) : null, y0 = gg ? gg.y0 : horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05), amp = gg ? gg.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15);
-    const tt = t + (xs - px) / W * L.win, v = layerValue(L, tt);
+    const tt = t - L.win * (.5 + lead) + (xs - px) / W * L.win, v = layerValue(L, tt);
     if (ys >= y0 - v * amp && ys <= y0) return tt;
   }
-  return t + (xs - W / 2) / W * layers[0].win;
+  return t - layers[0].win * (.5 + lead) + (xs - W / 2) / W * layers[0].win;
 }
 
 // ---- src/draw/events.js
@@ -2247,6 +2258,48 @@ const DRAW = {
     const bp = (tn * .7 + e.ph) % 1; for (let i = 0; i < 3; i++) { const f = (bp + i / 3) % 1; ctx.strokeStyle = `rgba(220,240,255,${.5 - f * .4})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x - d * s * 5 + Math.sin(f * 8) * s * .3, y - f * s * 5, s * .1 + f * s * .3, 0, TAU); ctx.stroke(); }
   },
 
+  // --- les poissons de toutes sortes, nombreux : la silhouette dépend de l'espèce ---------------------------------------
+  fishes(ctx, e, c) {
+    const { H, x, y, tn } = c, sp = e.species || 'tuna', s = H * .012 * (e.size || 1), d = e.dir, tail = Math.sin(tn * 6 + e.ph) * s * .4, col = e.col, dark = 'rgba(10,14,24,.9)';
+    const P = pts => poly(ctx, pts.map(([px, py]) => [x + d * px * s, y + py * s]));
+    const eye = (ex, ey, r = .12) => { ctx.fillStyle = '#f5f5f5'; ctx.beginPath(); ctx.arc(x + d * ex * s, y + ey * s, s * r * 1.6, 0, TAU); ctx.fill(); ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(x + d * (ex + .04) * s, y + ey * s, s * r, 0, TAU); ctx.fill(); };
+    const body = (rx, ry, fill = col) => { ctx.fillStyle = fill; ctx.beginPath(); ctx.ellipse(x, y, s * rx, s * ry, 0, 0, TAU); ctx.fill(); };
+    const fin = (bx, by, len, up) => { ctx.fillStyle = col; P([[bx, by], [bx - len * .6, by + (up ? -len : len)], [bx - len, by]]); };
+    ctx.fillStyle = col;
+    switch (sp) {
+      case 'clown': body(1.4, .8); ctx.fillStyle = '#f5f5f5'; for (const bx of [.6, -.1, -.8]) P([[bx, -.75], [bx + .3, -.75], [bx + .25, .75], [bx - .05, .75]]); ctx.fillStyle = col; P([[-1.3, 0], [-2, -.7 + tail], [-2, .7 + tail]]); fin(.3, -.75, .6, true); eye(.95, -.2); break;
+      case 'tang': body(1.5, .9); ctx.fillStyle = '#f2c230'; P([[-1.4, 0], [-2.2, -.7 + tail], [-2.2, .7 + tail]]); ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(x - d * s * .2, y, s * 1, s * .35, 0, 0, TAU); ctx.fill(); fin(.4, -.85, .9, true); fin(.4, .85, .7, false); eye(1.05, -.25); break;
+      case 'angel': P([[1.4, 0], [.3, -1.6], [-1, -1.9], [-1.1, 0], [-1, 1.9], [.3, 1.6]]); ctx.fillStyle = dark; for (const bx of [.6, -.1]) P([[bx, -1.3], [bx + .25, -1.3], [bx + .1, 1.3], [bx - .15, 1.3]]); ctx.fillStyle = col; P([[-1.1, 0], [-1.9, -.6 + tail], [-1.9, .6 + tail]]); eye(.9, -.3); break;
+      case 'puffer': { const puff = 1 + .25 * Math.max(0, Math.sin(tn * .7 + e.ph)); body(1.2 * puff, 1.1 * puff); ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, s * .1); ctx.beginPath(); for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; ctx.moveTo(x + Math.cos(a) * s * 1.15 * puff, y + Math.sin(a) * s * 1.05 * puff); ctx.lineTo(x + Math.cos(a) * s * 1.5 * puff, y + Math.sin(a) * s * 1.4 * puff); } ctx.stroke(); ctx.fillStyle = '#f5f5f5'; ctx.beginPath(); ctx.ellipse(x, y + s * .5 * puff, s * .9 * puff, s * .45 * puff, 0, 0, TAU); ctx.fill(); ctx.fillStyle = col; P([[-1.1 * puff, 0], [-1.7 * puff, -.5 + tail], [-1.7 * puff, .5 + tail]]); eye(.6, -.3, .14); break; }
+      case 'seahorse': { const b = Math.sin(tn * 2 + e.ph) * .1; ctx.strokeStyle = col; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(2, s * .5); ctx.beginPath(); ctx.moveTo(x + d * s * .3, y - s * 1.6); ctx.quadraticCurveTo(x - d * s * .6, y - s * .6, x + d * s * .1, y + s * .4); ctx.quadraticCurveTo(x + d * s * .6, y + s * 1.4, x - d * s * .5 + b * s, y + s * 1.9); ctx.stroke(); ctx.lineWidth = Math.max(1, s * .3); ctx.beginPath(); ctx.moveTo(x + d * s * .3, y - s * 1.6); ctx.lineTo(x + d * s * 1.1, y - s * 1.55); ctx.stroke(); ctx.fillStyle = col; P([[-.3, -.4], [-.9, -.2 + tail * .3], [-.9, .4 + tail * .3], [-.2, .4]]); eye(.4, -1.7, .1); break; }
+      case 'eel': { ctx.strokeStyle = col; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(2, s * .55); ctx.beginPath(); for (let i = 0; i <= 10; i++) { const px = x + d * (1.8 - i * .5) * s, py = y + Math.sin(tn * 4 + i * .8 + e.ph) * s * .35 * (i / 10 + .2); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); ctx.lineWidth = Math.max(1, s * .12); ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.beginPath(); for (let i = 0; i <= 10; i++) { const px = x + d * (1.8 - i * .5) * s, py = y + Math.sin(tn * 4 + i * .8 + e.ph) * s * .35 * (i / 10 + .2) - s * .3; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); eye(1.7, -.1, .1); break; }
+      case 'lion': body(1.3, .7); ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, s * .12); ctx.beginPath(); for (let i = 0; i < 9; i++) { const a = -Math.PI * .15 - i * .1 - Math.sin(tn * 2 + i) * .05; ctx.moveTo(x - d * s * (.9 - i * .2), y - s * .5); ctx.lineTo(x - d * s * (.9 - i * .2) + Math.cos(a) * s * 1.6 * d, y - s * .5 + Math.sin(a) * s * 1.6); } for (let i = 0; i < 4; i++) { ctx.moveTo(x + d * s * (.2 - i * .3), y + s * .5); ctx.lineTo(x + d * s * (.2 - i * .3) - d * s * .7, y + s * 1.6); } ctx.stroke(); ctx.fillStyle = '#f5f5f5'; for (const bx of [.6, .1, -.4]) P([[bx, -.6], [bx + .15, -.6], [bx + .05, .6], [bx - .1, .6]]); ctx.fillStyle = col; P([[-1.2, 0], [-1.9, -.6 + tail], [-1.9, .6 + tail]]); eye(.9, -.15); break;
+      case 'sword': P([[.5, -.5], [1.4, -.25], [3.4, -.08], [1.4, .1], [.5, .5], [-1.4, .4], [-1.8, 0], [-1.4, -.4]]); P([[-1.7, 0], [-2.6, -1 + tail], [-2.6, 1 + tail]]); P([[.2, -.5], [-.4, -1.7], [-1.2, -.4]]); ctx.fillStyle = '#c8d3e0'; ctx.beginPath(); ctx.ellipse(x - d * s * .3, y + s * .2, s * 1.4, s * .25, 0, 0, TAU); ctx.fill(); eye(.9, -.15, .1); break;
+      case 'tuna': body(1.9, .7); ctx.fillStyle = '#c8d3e0'; ctx.beginPath(); ctx.ellipse(x, y + s * .25, s * 1.6, s * .35, 0, 0, TAU); ctx.fill(); ctx.fillStyle = col; P([[-1.8, 0], [-2.7, -.9 + tail], [-2.7, .9 + tail]]); P([[.2, -.65], [-.2, -1.4], [-.7, -.6]]); P([[.6, .5], [.2, 1.1], [-.2, .5]]); eye(1.3, -.15, .1); break;
+      case 'butterfly': body(1.3, 1.1); ctx.fillStyle = dark; P([[.6, -1.2], [.95, -1.2], [.85, 1.1], [.5, 1.1]]); ctx.fillStyle = col; P([[-1.2, 0], [-1.9, -.6 + tail], [-1.9, .6 + tail]]); ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(x - d * s * .6, y - s * .5, s * .22, 0, TAU); ctx.fill(); ctx.fillStyle = col; P([[.6, -1.05], [-.2, -1.6], [-.8, -.9]]); eye(1, -.35, .09); break;
+      case 'grouper': body(2, 1.1); ctx.fillStyle = 'rgba(255,255,255,.3)'; for (let i = 0; i < 9; i++) { ctx.beginPath(); ctx.arc(x + Math.sin(i * 2.4) * s * 1.5, y + Math.cos(i * 1.7) * s * .7, s * .16, 0, TAU); ctx.fill(); } ctx.fillStyle = col; P([[-1.9, 0], [-2.7, -.9 + tail], [-2.7, .9 + tail]]); ctx.fillStyle = col; ctx.beginPath(); for (let i = 0; i < 7; i++) { const px = x + d * s * (.9 - i * .35); ctx.moveTo(px, y - s * 1.05); ctx.lineTo(px - d * s * .1, y - s * 1.5 - (i % 2) * s * .15); ctx.lineTo(px - d * s * .35, y - s * 1.05); } ctx.fill(); ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(x + d * s * 2, y + s * .2); ctx.lineTo(x + d * s * 1.2, y + s * .35); ctx.lineTo(x + d * s * 2, y + s * .5); ctx.fill(); eye(1.4, -.35, .12); break;
+      case 'barracuda': P([[2.6, 0], [1.8, -.35], [-1.8, -.4], [-2.4, 0], [-1.8, .4], [1.8, .35]]); P([[-2.3, 0], [-3.1, -.8 + tail], [-3.1, .8 + tail]]); P([[-.6, -.4], [-.9, -.9], [-1.3, -.4]]); ctx.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 5; i++) P([[1.2 - i * .6, -.35], [1.05 - i * .6, -.35], [.95 - i * .6, .35], [1.1 - i * .6, .35]]); ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(x + d * s * 2.6, y); ctx.lineTo(x + d * s * 1.6, y + s * .1); ctx.stroke(); eye(1.9, -.15, .09); break;
+      case 'sunfish': body(1.8, 2.2); ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x - d * s * .4, y, s * 1.2, s * 1.9, 0, 0, TAU); ctx.fill(); ctx.fillStyle = col; P([[-.3, -2], [-.9, -3.6 + Math.sin(tn * 2) * .3], [-1.2, -1.9]]); P([[-.3, 2], [-.9, 3.6 - Math.sin(tn * 2) * .3], [-1.2, 1.9]]); P([[-1.7, -1.6], [-2.3, 0], [-1.7, 1.6]]); eye(1.2, -.5, .12); break;
+      default: /* discus */ body(1.4, 1.5); ctx.fillStyle = 'rgba(255,255,255,.35)'; for (const bx of [.7, .1, -.5, -1]) P([[bx, -1.4], [bx + .2, -1.4], [bx + .1, 1.4], [bx - .1, 1.4]]); ctx.fillStyle = col; P([[-1.3, 0], [-2, -.6 + tail], [-2, .6 + tail]]); eye(.95, -.4, .1);
+    }
+  },
+
+  // --- la baleine géante : elle prend presque tout l'écran et passe devant tout, lentement ------------------------------
+  leviathan(ctx, e, c) {
+    const { W, x, y, tn } = c, s = W * (e.span || .95) / 7.2, d = e.dir, fl = Math.sin(tn * .6 + e.ph), body = 'rgba(28,40,62,.94)', belly = 'rgba(150,170,195,.55)';
+    const P = pts => poly(ctx, pts.map(([px, py]) => [x + d * px * s, y + py * s]));
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.moveTo(x + d * s * 3.4, y); ctx.quadraticCurveTo(x + d * s * 3.1, y - s * .95, x + d * s * 1.2, y - s * 1.0); ctx.lineTo(x - d * s * .8, y - s * .92); ctx.quadraticCurveTo(x - d * s * 2.5, y - s * .75, x - d * s * 3.4, y + fl * s * .3 - s * .05); ctx.quadraticCurveTo(x - d * s * 2.5, y + s * .55, x - d * s * .8, y + s * .85); ctx.quadraticCurveTo(x + d * s * 2.6, y + s * 1.05, x + d * s * 3.4, y); ctx.fill();   // corps long et plat, tête ronde
+    P([[-3.25, fl * .3 - .05], [-4.5, -.55 + fl * .6], [-4.05, fl * .3], [-4.5, .65 + fl * .6]]);                                                  // caudale, fine et fourchue
+    P([[-1.5, -.9], [-2.1, -.85], [-1.85, -1.15]]);                                                                                              // petite dorsale, loin en arrière
+    ctx.save(); ctx.translate(x + d * s * 1.5, y + s * .6); ctx.rotate(d * (.55 + Math.sin(tn * .8) * .06)); ctx.beginPath(); ctx.ellipse(0, 0, s * .95, s * .22, 0, 0, TAU); ctx.fill(); ctx.restore();   // longue pectorale
+    ctx.fillStyle = belly; ctx.beginPath(); ctx.moveTo(x + d * s * 3.2, y + s * .15); ctx.quadraticCurveTo(x + d * s * 1, y + s * 1.05, x - d * s * 1.6, y + s * .75); ctx.quadraticCurveTo(x + d * s * 1, y + s * .8, x + d * s * 3.2, y + s * .15); ctx.fill();   // gorge claire
+    ctx.strokeStyle = 'rgba(15,22,38,.45)'; ctx.lineWidth = Math.max(1, s * .03); ctx.beginPath(); for (let i = 0; i < 8; i++) { ctx.moveTo(x + d * s * 3.0, y + s * (.25 + i * .09)); ctx.quadraticCurveTo(x + d * s * 1, y + s * (.55 + i * .07), x - d * s * (1.2 - i * .1), y + s * (.6 + i * .03)); } ctx.stroke();   // sillons
+    ctx.fillStyle = 'rgba(15,22,38,.7)'; ctx.beginPath(); ctx.moveTo(x + d * s * 3.4, y + s * .05); ctx.quadraticCurveTo(x + d * s * 1.5, y + s * .35, x + d * s * .2, y + s * .5); ctx.lineTo(x + d * s * .25, y + s * .55); ctx.quadraticCurveTo(x + d * s * 1.5, y + s * .42, x + d * s * 3.4, y + s * .1); ctx.fill();   // bouche
+    ctx.fillStyle = 'rgba(230,235,240,.55)'; for (let i = 0; i < 14; i++) { const bx = x + d * s * (2.6 - hash(i + e.ph) * 3.6), by = y - s * (.2 + hash(i + 7) * .8) * (1 - Math.abs(2.6 - hash(i + e.ph) * 3.6) / 4); ctx.beginPath(); ctx.arc(bx, by, s * (.03 + hash(i + 3) * .04), 0, TAU); ctx.fill(); }   // bernacles
+    ctx.fillStyle = 'rgba(8,12,20,.9)'; ctx.beginPath(); ctx.arc(x + d * s * 2.75, y - s * .12, Math.max(2, s * .08), 0, TAU); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(x + d * s * 2.77, y - s * .15, Math.max(1, s * .025), 0, TAU); ctx.fill();   // œil
+    ctx.fillStyle = 'rgba(15,22,38,.8)'; ctx.beginPath(); ctx.ellipse(x + d * s * 1.6, y - s * 1.22, s * .12, s * .05, 0, 0, TAU); ctx.fill();   // évent
+  },
   seawhale(ctx, e, c) {
     const { H, x, y, tn } = c, s = H * .04 * (e.size || 1), d = e.dir, fl = Math.sin(tn * 1.1 + e.ph), body = 'rgba(40,58,86,.6)';
     ctx.fillStyle = body;
@@ -3010,7 +3063,7 @@ const bcol = (c, dl = 0, a = 1) => `hsla(${c.h},${c.s}%,${clamp(c.l + dl, 0, 100
 
 // Végétation au premier plan : silhouettes posées le long de l'axe du temps du plan proche, elles défilent avec lui
 function drawVegetation(ctx, S, pal, floor) {
-  const { W, H, t } = S, win = 45, t0 = t - win / 2, spacing = 2.6;
+  const { W, H, t, lead = 0 } = S, win = 45, t0 = t - win * (.5 + lead), spacing = 2.6;
   const first = Math.floor(t0 / spacing), last = Math.ceil((t0 + win) / spacing);
   for (let k = first; k <= last; k++) {
     const jitter = hash(k * 1.7) * spacing * .8, tt = k * spacing + jitter, x = (tt - t0) / win * W;
@@ -3045,7 +3098,7 @@ function drawFloor(ctx, S, pal, floor) {
 // Neige sur les crêtes des plans, dans le biome enneigé et en transition
 function drawSnowCaps(ctx, S, L, i, y0, amp, snowline) {
   if (snowline <= 0) return;
-  const { W, t } = S, t0 = t - L.win / 2, px = W / 2 - S.parX * W * (.01 + i / 3 * .05);
+  const { W, t, lead = 0 } = S, t0 = t - L.win * (.5 + lead), px = W / 2 - S.parX * W * (.01 + i / 3 * .05);
   ctx.fillStyle = `rgba(250,252,255,${.85 * snowline})`; ctx.beginPath(); let started = false;
   for (let x = 0; x <= W; x += 3) { const v = layerValue(L, t0 + (x - px) / W * L.win); const yy = y0 - v * amp; if (!started) { ctx.moveTo(x, yy); started = true; } else ctx.lineTo(x, yy); }
   for (let x = W; x >= 0; x -= 3) { const v = layerValue(L, t0 + (x - px) / W * L.win); ctx.lineTo(x, y0 - Math.max(0, v - .18 * snowline) * amp); }
@@ -3105,7 +3158,7 @@ function cityPalette({ b, prev, k }) {
 
 // Une rue d'immeubles : la courbe du plan est échantillonnée par parcelles, chaque parcelle est un immeuble
 function drawStreet(ctx, S, L, i, y0, amp, c, pal, night) {
-  const { W, t, parX, tn } = S, depth = i / 3, px = W / 2 - parX * W * (.01 + depth * .05), t0 = t - L.win / 2;
+  const { W, t, parX, tn, lead = 0 } = S, depth = i / 3, px = W / 2 - parX * W * (.01 + depth * .05), t0 = t - L.win * (.5 + lead);
   const n = 18 + i * 8, bw = W / n, winCol = cityCol(pal.win), lit = night * (.55 + .3 * pal.neon);
   ctx.fillStyle = cityCol(c, -(1 - night) * 0 - night * 22);
   for (let k = 0; k < n; k++) {
@@ -3211,7 +3264,7 @@ function drawParticles(ctx, S, pal) {
 
 // Flore du premier plan, le long de l'axe du temps du plan proche
 function drawFlora(ctx, S, pal, floor) {
-  const { W, H, t, tn } = S, win = 45, t0 = t - win / 2, spacing = 2.2;
+  const { W, H, t, tn, lead = 0 } = S, win = 45, t0 = t - win * (.5 + lead), spacing = 2.2;
   for (let k = Math.floor(t0 / spacing); k <= Math.ceil((t0 + win) / spacing); k++) {
     const tt = k * spacing + hash(k * 1.3) * spacing * .8, x = (tt - t0) / win * W; if (x < -W * .05 || x > W * 1.05) continue;
     const size = H * (.04 + hash(k + .5) * .06), y = floor + H * .005 + hash(k + .9) * H * .03, sway = Math.sin(tn * .8 + k) * .12;
@@ -3230,7 +3283,8 @@ function renderSea(ctx, S, D) {
   ctx.fillStyle = seaCol(pal.floor, -(1 - day) * 12); ctx.fillRect(0, floor, W, H - floor);
   ctx.fillStyle = seaCol(pal.floor, 6, .5); for (let i = 0; i < 4; i++) { const y = floor + H * (.02 + i * .022); ctx.beginPath(); for (let x = 0; x <= W; x += 8) ctx.lineTo(x, y + Math.sin(x * .02 + t * .6 + i) * H * .004); ctx.lineTo(W, y + H * .012); ctx.lineTo(0, y + H * .012); ctx.closePath(); ctx.fill(); }
   drawFlora(ctx, S, pal, floor);
-  for (const e of events) if (SEA_TYPES.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon: H, wTop: floor, biome: pal.b }, sky);
+  for (const e of events) if (SEA_TYPES.includes(e.type) && e.type !== 'leviathan') D.drawEvent(ctx, e, { ...S, horizon: H, wTop: floor, biome: pal.b }, sky);
+  for (const e of events) if (e.type === 'leviathan') D.drawEvent(ctx, e, { ...S, horizon: H, wTop: floor, biome: pal.b }, sky);   // devant tout, elle prend l'écran
   drawParticles(ctx, S, pal);
   return { src: null, srcVis: 0, horizon: H * .5, wTop: floor - H * .025, layerGeom: geom };
 }
@@ -3372,7 +3426,7 @@ const D = {
 function frame() {
   const tn = now(); if (tn - lastDraw < 1 / FPS_CAP - .003) { requestAnimationFrame(frame); return; } lastDraw = tn;
   const w0 = performance.now(), dt = Math.min(.1, tn - lastT); lastT = tn;
-  const t = audio.currentTime || 0, playing = started && !audio.paused;
+  const t = audio.currentTime || 0, playing = started && !audio.paused, lead = A === LIVE ? .08 : 0;   // à l'écoute d'un inconnu, le relief se forme hors écran, à droite
   const parX = mouseX - .5, parY = mouseY - .5;
   let b = playing ? analyse() : null, kick = 0;
   if (b) { kick = kickDet.feed(b.kickE, tn); if (A === LIVE) { LIVE.feed(t, { loud: b.loud, peak: b.peak, sub: b.sub, bass: b.bass, mid: b.mid, high: b.high }); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } } }
@@ -3383,7 +3437,7 @@ function frame() {
   kickFlash *= Math.exp(-dt * 8); jumpFlash *= Math.exp(-dt * 4);
   const lvl = playing ? A.levelAt(t) : .3, sky = skyState(t), wx = weatherAt(t); curW = wx;
   const wind = REDUCED ? 0 : (.004 + lvl * .012) * (wx.w === 'storm' ? 2.5 : wx.w === 'rain' ? 1.6 : 1);
-  const S = { W, H, t, tn, dt, sky, wx, disp, lvl, hue, hb: (158 + hue) % 360, hs: (18 + hue) % 360, layers, events, parX, parY, wind, kickFlash, waves, stars, streaks, clouds, cloudSprites, rng, makeLayer, reduced: REDUCED };
+  const S = { W, H, t, tn, dt, sky, wx, disp, lvl, hue, lead, hb: (158 + hue) % 360, hs: (18 + hue) % 360, layers, events, parX, parY, wind, kickFlash, waves, stars, streaks, clouds, cloudSprites, rng, makeLayer, reduced: REDUCED };
   if (kick) onKick(kick, geo.horizon || H * .7);
   if (playing) { const before = events.length; tickEvents(events, dt, sky, wind, wx, rng, tn, allowedTypes(sceneId)); for (const e of events.slice(before)) stats.spawned[e.type] = (stats.spawned[e.type] || 0) + 1; }
   if (wx.w === 'storm' && wx.k > .3 && playing && rng() < dt / 7) lightning.strike(W, geo.horizon || H * .7, rng, tn);
@@ -3455,7 +3509,7 @@ let clickTimer;
 document.addEventListener('click', e => {
   clearTimeout(clickTimer);
   const xs = e.clientX / innerWidth * W, ys = e.clientY / innerHeight * H;
-  clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp }, geo.layerGeom)); }, 220);
+  clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp, lead: A === LIVE ? .08 : 0 }, geo.layerGeom)); }, 220);
 });
 document.addEventListener('dblclick', () => { clearTimeout(clickTimer); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); });
 addEventListener('wheel', e => { if (konsole.el.contains(e.target) || plPanel.el.contains(e.target) || controls.el.contains(e.target)) return; e.preventDefault(); if (started) seekTo(audio.currentTime + e.deltaY * (e.shiftKey ? .6 : .06)); }, { passive: false });

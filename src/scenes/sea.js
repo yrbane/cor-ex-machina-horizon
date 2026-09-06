@@ -45,7 +45,7 @@ function drawParticles(ctx, S, pal) {
 
 // Flore du premier plan, le long de l'axe du temps du plan proche
 function drawFlora(ctx, S, pal, floor) {
-  const { W, H, t, tn } = S, win = 45, t0 = t - win / 2, spacing = 2.2;
+  const { W, H, t, tn, lead = 0 } = S, win = 45, t0 = t - win * (.5 + lead), spacing = 2.2;
   for (let k = Math.floor(t0 / spacing); k <= Math.ceil((t0 + win) / spacing); k++) {
     const tt = k * spacing + hash(k * 1.3) * spacing * .8, x = (tt - t0) / win * W; if (x < -W * .05 || x > W * 1.05) continue;
     const size = H * (.04 + hash(k + .5) * .06), y = floor + H * .005 + hash(k + .9) * H * .03, sway = Math.sin(tn * .8 + k) * .12;
@@ -64,7 +64,8 @@ export function renderSea(ctx, S, D) {
   ctx.fillStyle = seaCol(pal.floor, -(1 - day) * 12); ctx.fillRect(0, floor, W, H - floor);
   ctx.fillStyle = seaCol(pal.floor, 6, .5); for (let i = 0; i < 4; i++) { const y = floor + H * (.02 + i * .022); ctx.beginPath(); for (let x = 0; x <= W; x += 8) ctx.lineTo(x, y + Math.sin(x * .02 + t * .6 + i) * H * .004); ctx.lineTo(W, y + H * .012); ctx.lineTo(0, y + H * .012); ctx.closePath(); ctx.fill(); }
   drawFlora(ctx, S, pal, floor);
-  for (const e of events) if (SEA_TYPES.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon: H, wTop: floor, biome: pal.b }, sky);
+  for (const e of events) if (SEA_TYPES.includes(e.type) && e.type !== 'leviathan') D.drawEvent(ctx, e, { ...S, horizon: H, wTop: floor, biome: pal.b }, sky);
+  for (const e of events) if (e.type === 'leviathan') D.drawEvent(ctx, e, { ...S, horizon: H, wTop: floor, biome: pal.b }, sky);   // devant tout, elle prend l'écran
   drawParticles(ctx, S, pal);
   return { src: null, srcVis: 0, horizon: H * .5, wTop: floor - H * .025, layerGeom: geom };
 }
