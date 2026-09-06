@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 1.9.3 — 2026-09-06 · « La diversité d'abord »
+
+- Poissons, voitures et passants : on choisit d'abord une sorte qu'on ne voit pas encore à l'écran, avant de répéter une sorte dans une autre couleur. Plus de bancs de quatre poissons-lunes.
+- Le poisson-lune est un peu moins énorme.
+
 ## 1.9.2 — 2026-09-06 · « Pas de foudre sous l'eau »
 
 - Au fond des océans, l'orage ne fait plus tomber la foudre dans l'eau ; il n'assombrit que la lumière.

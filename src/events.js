@@ -68,13 +68,15 @@ export const FISH_SPECIES = ['clown', 'tang', 'angel', 'puffer', 'seahorse', 'ee
 export const FISH_COLORS = ['#ff8c42', '#2f7fe8', '#f2c230', '#8ff0d0', '#c9a0ff', '#e8402f', '#9ad0ff', '#1fbf8a', '#ffd27a', '#c8d3e0'];
 const FISH_FIXED = { clown: '#ff8c42', tang: '#2f7fe8', butterfly: '#f2c230', tuna: '#3a4a66', barracuda: '#c8d3e0', sword: '#4a5a80' };
 const FISH_SPEED = { seahorse: [.003, .006], puffer: [.01, .02], eel: [.015, .025], sunfish: [.008, .014], grouper: [.012, .02], tuna: [.06, .09], barracuda: [.05, .08], sword: [.07, .1] };
-const FISH_SIZE = { sunfish: [1.8, 2.4], grouper: [1.5, 2], tuna: [1.2, 1.6], sword: [1.3, 1.7], barracuda: [1.1, 1.5], seahorse: [.7, 1], eel: [1, 1.4] };
+const FISH_SIZE = { sunfish: [1.5, 1.9], grouper: [1.5, 2], tuna: [1.2, 1.6], sword: [1.3, 1.7], barracuda: [1.1, 1.5], seahorse: [.7, 1], eel: [1, 1.4] };
 export const WALKER_COLORS = ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5', '#1fbf8a', '#ff8c42', '#22252f'];
 // Choisit un couple (a, b) qui n'est porté par aucun des passages déjà présents ; à défaut, n'importe lequel
 function distinctPair(rng, existing, keyA, keyB, A, B, ok = () => true) {
-  const used = new Set(existing.map(e => e[keyA] + '/' + e[keyB])), free = [];
+  const used = new Set(existing.map(e => e[keyA] + '/' + e[keyB])), usedA = new Set(existing.map(e => e[keyA])), free = [];
   for (const a of A) for (const b of B) if (ok(a, b) && !used.has(a + '/' + b)) free.push([a, b]);
-  return free.length ? free[Math.floor(rng() * free.length)] : [pick(rng, A), pick(rng, B)];
+  const fresh = free.filter(([a]) => !usedA.has(a));   // d'abord une sorte qu'on ne voit pas encore, la diversité avant la couleur
+  const from = fresh.length ? fresh : free;
+  return from.length ? from[Math.floor(rng() * from.length)] : [pick(rng, A), pick(rng, B)];
 }
 
 // Espèces d'oiseaux : taille, cadence de battement, vitesse, ondulation, vol plané

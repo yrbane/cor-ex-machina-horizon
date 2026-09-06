@@ -155,6 +155,8 @@ test('au fond des océans, les poissons sont nombreux et de toutes sortes, jamai
   const rng = seeded(21), list = [];
   for (let i = 0; i < 12; i++) list.push(spawn('fishes', rng, 0, list));
   assert.equal(new Set(list.map(e => e.species + '/' + e.col)).size, 12); assert.ok(list.every(e => FISH_SPECIES.includes(e.species)));
+  assert.equal(new Set(list.map(e => e.species)).size, 12, 'la diversité d’abord : douze espèces différentes avant de répéter une espèce dans une autre couleur');
+  const cars = []; for (let i = 0; i < 10; i++) cars.push(spawn('car', rng, 0, cars)); assert.equal(new Set(cars.map(e => e.model)).size, 10, 'pareil pour les voitures');
   const sea = [], allowed = SEA_TYPES;
   for (let i = 0; i < 6000; i++) tickEvents(sea, .05, day, .003, clear, rng, i * .05, allowed);
   const fishes = sea.filter(e => e.type === 'fishes');
