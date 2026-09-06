@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="cor-ex-machina-horizon 1.7.0">
+<meta name="generator" content="cor-ex-machina-horizon 1.8.0">
 <title>Cor ex machina, horizon</title>
 <style>
   :root { --ink: #eae7dd; --ink-2: #a9aec0; --ink-3: #6b7188; --line: rgba(255,255,255,.12); --series: #5aa0f0; --sub: #d95926; --bass: #199e70; --mid: #c98500; --high: #d55181; }
@@ -126,7 +126,7 @@
 <aside id="console" hidden>
   <button class="close" id="closeBtn">Fermer (Échap)</button>
   <header>
-    <h1>Cor ex machina, horizon <small>version 1.7.0</small></h1>
+    <h1>Cor ex machina, horizon <small>version 1.8.0</small></h1>
     <p id="stateLine"></p>
   </header>
   <nav class="tabs" role="tablist">
@@ -161,7 +161,7 @@
         <p class="lead">Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</p>
         <p class="lead">Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. Le cœur du set bat dans l'astre levé.</p>
         <p class="lead">La météo change par segments de 3 minutes : ciel clair, nuageux, pluie, orage avec foudre sur les coups de sub, brouillard, neige, aurore la nuit, arc-en-ciel après la pluie de jour.</p>
-        <p class="lead">Passent au hasard, trois au plus à la fois et jamais deux de la même sorte : oiseaux, vols en V, avions dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, drones, chasseurs, fusées, satellites, ovnis, feux d'artifice, ballons, cerfs-volants, papillons, chauves-souris, graines, voiliers, cargos, canards, dauphins, poissons, baleines, serpent de mer, périscope. En ville : voitures, bus, camions, vélos, passants et leur chien, tramways. Au fond des océans : bancs de poissons, requins, tortues, méduses, raies manta, plongeurs, pieuvres, baudroies la nuit, sous-marins, baleines au large.</p>
+        <p class="lead">Passent au hasard, trois au plus à la fois et jamais deux de la même sorte : oiseaux, vols en V, avions dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, drones, chasseurs, fusées, satellites, ovnis, feux d'artifice, ballons, cerfs-volants, papillons, chauves-souris, graines, voiliers, cargos, canards, dauphins, poissons, baleines, serpent de mer, périscope. En ville, la rue est pleine et échappe à cette règle : dix modèles de voitures en dix couleurs, tous différents à l'écran, bus, camions, vélos, huit allures de passants avec chien ou parapluie, tramways. Au fond des océans : bancs de poissons, requins, tortues, méduses, raies manta, plongeurs, pieuvres, baudroies la nuit, sous-marins, baleines au large.</p>
         <p class="lead">Quatre scènes sur le même moteur : Horizon au bord de l'eau, Vallée et ses biomes verdoyants, désertiques ou enneigés, Ville qui passe de la cité moderne à la vieille ville et aux néons, Océan qui va du récif à la forêt de kelp et aux abysses. Les biomes alternent toutes les quatre ou cinq minutes.</p>
         <p class="lead">Pour un morceau hors set, le paysage se construit en direct à l'écoute et l'analyse est gardée en cache : la fois suivante, le paysage est connu dès le départ.</p>
       </div>
@@ -1380,11 +1380,11 @@ const TYPES = {
   serpent:     { rate: 1 / 900, label: 'serpents de mer', single: true, where: 'water' },
   submarine:   { rate: 1 / 800, label: 'périscopes', single: true, where: 'water' },
   // Ville : sur la route et le trottoir
-  car:         { rate: 1 / 14,  label: 'voitures', where: 'city' },
+  car:         { rate: 1 / 2,   label: 'voitures', where: 'city', crowd: 8 },
   bus:         { rate: 1 / 60,  label: 'bus', where: 'city' },
   truck:       { rate: 1 / 90,  label: 'camions', where: 'city' },
-  bike:        { rate: 1 / 40,  label: 'vélos', where: 'city' },
-  walker:      { rate: 1 / 20,  label: 'passants', where: 'city' },
+  bike:        { rate: 1 / 12,  label: 'vélos', where: 'city', crowd: 3 },
+  walker:      { rate: 1 / 4,   label: 'passants', where: 'city', crowd: 7 },
   tram:        { rate: 1 / 240, label: 'tramways', where: 'city', single: true },
   // Fond des océans
   school:      { rate: 1 / 25,  label: 'bancs de poissons', where: 'sea' },
@@ -1404,6 +1404,19 @@ const SEA_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'sea');
 const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
 const TRANSIENT = ['shooting', 'fish', 'whale', 'fireworks', 'dolphins'];
 const MAX_EVENTS = 3;   // passages simultanés au plus
+// La foule de la ville : voitures, vélos et passants ne comptent pas dans cette limite. Chacun a son plafond (crowd), la rue le sien, et personne ne se ressemble
+const MAX_CROWD = 14;
+const CROWD_TYPES = Object.keys(TYPES).filter(k => TYPES[k].crowd);
+const CAR_MODELS = ['sedan', 'hatch', 'van', 'pickup', 'sports', 'taxi', 'police', 'cabrio', 'limo', 'suv'];
+const CAR_COLORS = ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152', '#ff8c42', '#7fd1ff', '#c0392b'];
+const WALKER_LOOKS = ['coat', 'dress', 'hoodie', 'suit', 'kid', 'elder', 'runner', 'hat'];
+const WALKER_COLORS = ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5', '#1fbf8a', '#ff8c42', '#22252f'];
+// Choisit un couple (a, b) qui n'est porté par aucun des passages déjà présents ; à défaut, n'importe lequel
+function distinctPair(rng, existing, keyA, keyB, A, B) {
+  const used = new Set(existing.map(e => e[keyA] + '/' + e[keyB])), free = [];
+  for (const a of A) for (const b of B) if (!used.has(a + '/' + b)) free.push([a, b]);
+  return free.length ? free[Math.floor(rng() * free.length)] : [pick(rng, A), pick(rng, B)];
+}
 
 // Espèces d'oiseaux : taille, cadence de battement, vitesse, ondulation, vol plané
 const SPECIES = [
@@ -1423,8 +1436,10 @@ function canSpawn(type, sky, weather, events) {
   if (T.night && night < .5) return false;
   if (T.day && sky.day < .5) return false;
   if (T.light && (weather.w === 'rain' || weather.w === 'storm')) return false;
-  if (events.length >= MAX_EVENTS) return false;
-  if (events.some(e => e.type === type)) return false;   // jamais deux passages du même type en même temps
+  if (T.crowd) return events.filter(e => e.type === type).length < T.crowd && events.filter(e => TYPES[e.type].crowd).length < MAX_CROWD;   // la foule a ses propres limites, et se répète
+  const others = events.filter(e => !TYPES[e.type].crowd);
+  if (others.length >= MAX_EVENTS) return false;
+  if (others.some(e => e.type === type)) return false;   // jamais deux passages du même type en même temps
   return true;
 }
 // Taux effectif : la nuit noire favorise le nocturne, le jour franc le diurne, les ovnis préfèrent la nuit
@@ -1434,7 +1449,7 @@ function effectiveRate(type, sky) {
   return r;
 }
 
-function spawn(type, rng, tn) {
+function spawn(type, rng, tn, existing = []) {
   const dir = rng() < .5 ? 1 : -1, x0 = dir > 0 ? -.12 : 1.12, e = { type, dir, x: x0, born: tn, ph: rng() * TAU, seed: rng() };
   switch (type) {
     case 'bird': { const sp = pick(rng, SPECIES); Object.assign(e, { sp, y: rnd(rng, .12, .55), v: rnd(rng, sp.v[0], sp.v[1]), size: sp.size * rnd(rng, .8, 1.2), wob: sp.wob, heading: rnd(rng, -.3, .3), turn: rnd(rng, -.2, .2), swoop: 0 }); break; }
@@ -1466,11 +1481,11 @@ function spawn(type, rng, tn) {
     case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
     case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
     case 'submarine': Object.assign(e, { d: rnd(rng, .2, .6), v: rnd(rng, .004, .008) }); break;
-    case 'car': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .08, .13), col: pick(rng, ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152']), size: rnd(rng, .9, 1.1) }); break;
-    case 'bus': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
-    case 'truck': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
+    case 'car': { const [model, col] = distinctPair(rng, existing.filter(o => o.type === 'car'), 'model', 'col', CAR_MODELS, CAR_COLORS); Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .07, .13) * (model === 'sports' ? 1.4 : model === 'limo' ? .8 : 1), model, col: model === 'taxi' ? '#f2c230' : model === 'police' ? '#f5f5f5' : col, size: rnd(rng, .9, 1.1) }); break; }
+    case 'bus': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
+    case 'truck': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
     case 'bike': Object.assign(e, { lane: 2, v: rnd(rng, .03, .045), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230']) }); break;
-    case 'walker': Object.assign(e, { lane: 3, v: rnd(rng, .012, .02), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5']), size: rnd(rng, .85, 1.15), dog: rng() < .25 }); break;
+    case 'walker': { const [look, col] = distinctPair(rng, existing.filter(o => o.type === 'walker'), 'look', 'col', WALKER_LOOKS, WALKER_COLORS); Object.assign(e, { lane: 3, v: rnd(rng, .012, .02) * (look === 'runner' ? 2.2 : look === 'elder' ? .6 : 1), look, col, size: look === 'kid' ? rnd(rng, .6, .7) : rnd(rng, .9, 1.15), dog: look !== 'kid' && rng() < .2, umb: rng() < .7, skin: pick(rng, ['#e9c8a8', '#c68642', '#8d5524', '#f1d3b3']), hair: pick(rng, ['#22252f', '#5a3a1a', '#d9b56c', '#b0b4bf', '#a0302a']) }); break; }
     case 'tram': Object.assign(e, { lane: 0, v: rnd(rng, .05, .06), col: '#f2c230' }); break;
     case 'school': Object.assign(e, { y: rnd(rng, .15, .7), v: rnd(rng, .04, .07), n: 12 + Math.floor(rng() * 16), col: pick(rng, ['#9ad0ff', '#ffd27a', '#c9a0ff', '#8ff0d0']), size: rnd(rng, .8, 1.2) }); break;
     case 'shark': Object.assign(e, { y: rnd(rng, .2, .6), v: rnd(rng, .035, .05), size: rnd(rng, 1, 1.4) }); break;
@@ -1488,7 +1503,7 @@ function spawn(type, rng, tn) {
 
 // Fait vivre la liste : apparitions, mouvements propres à chaque type, disparition hors champ
 function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null) {
-  for (const k in TYPES) if ((!allowed || allowed.includes(k)) && canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn));
+  for (const k in TYPES) if ((!allowed || allowed.includes(k)) && canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn, list));
   for (let i = list.length - 1; i >= 0; i--) {
     const e = list[i], age = tn - e.born;
     if (TRANSIENT.includes(e.type)) { e.life += dt; if (e.life > e.ttl) list.splice(i, 1); continue; }
@@ -1679,7 +1694,7 @@ function timeAt(layers, xs, ys, t, scene, geom) {
 function drawEvent(ctx, e, scene, sky) {
   const { W, H, horizon, wTop, tn } = scene, x = e.x * W, y = e.y * horizon, age = tn - e.born, k = inks(sky.day);
   ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const D = DRAW[e.type]; if (D) D(ctx, e, { x, y, age, k, W, H, horizon, wTop, tn, sky, hue: scene.hue || 0, disp: scene.disp });
+  const D = DRAW[e.type]; if (D) D(ctx, e, { x, y, age, k, W, H, horizon, wTop, tn, sky, hue: scene.hue || 0, disp: scene.disp, wx: scene.wx });
 }
 
 // --- oiseaux -------------------------------------------------------------
@@ -2038,17 +2053,51 @@ const DRAW = {
   },
 
   // --- ville : la rue au premier plan. Voies : 0 loin, 1 près, 2 piste cyclable, 3 trottoir ---------------------------
-  car(ctx, e, c) {
-    const { wTop, H, x, sky, tn } = c, lane = e.lane, s = H * (lane ? .02 : .016) * (e.size || 1), yy = wTop + H * (lane ? .112 : .058), d = e.dir, night = sky.day < .5;
-    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, yy + s * .05, s * 2.4, s * .18, 0, 0, TAU); ctx.fill();          // ombre
-    ctx.fillStyle = e.col; poly(ctx, [[x - s * 2.3, yy], [x - s * 2.3, yy - s * .7], [x - s * 1.4, yy - s * .8], [x - s * .9, yy - s * 1.5], [x + s * .9, yy - s * 1.5], [x + s * 1.6, yy - s * .8], [x + s * 2.3, yy - s * .7], [x + s * 2.3, yy]]);
-    ctx.fillStyle = night ? 'rgba(90,110,140,.9)' : 'rgba(180,210,235,.85)'; poly(ctx, [[x - s * .8, yy - s * .85], [x - s * .55, yy - s * 1.38], [x + s * .7, yy - s * 1.38], [x + s * 1.3, yy - s * .85]]);   // vitres
-    ctx.fillStyle = e.col; R(ctx, x - s * .05, yy - s * 1.4, s * .1, s * .55);                                                              // montant
-    ctx.fillStyle = '#16181f'; for (const wx of [-1.5, 1.5]) { ctx.beginPath(); ctx.arc(x + wx * s, yy, s * .42, 0, TAU); ctx.fill(); ctx.fillStyle = '#9aa0ad'; ctx.beginPath(); ctx.arc(x + wx * s, yy, s * .18, 0, TAU); ctx.fill(); ctx.fillStyle = '#16181f'; }   // roues
-    ctx.fillStyle = '#ffe9a8'; R(ctx, x + d * s * 2.1, yy - s * .55, s * .2, s * .22); ctx.fillStyle = '#ff3b30'; R(ctx, x - d * s * 2.3, yy - s * .55, s * .2, s * .22);                            // phares, feux
-    if (night) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,235,180,.18)'; poly(ctx, [[x + d * s * 2.3, yy - s * .5], [x + d * s * 7, yy - s * 1.2], [x + d * s * 7, yy + s * .3]]); ctx.globalCompositeOperation = 'source-over'; }   // faisceau
-  },
 
+  car(ctx, e, c) {
+    const { wTop, H, x, sky, tn } = c, lane = e.lane, s = H * (lane ? .02 : .016) * (e.size || 1), yy = wTop + H * (lane ? .112 : .058), d = e.dir, night = sky.day < .5, m = e.model || 'sedan';
+    const glass = night ? 'rgba(90,110,140,.9)' : 'rgba(180,210,235,.85)', P = pts => poly(ctx, pts.map(([px, py]) => [x + d * px * s, yy - py * s]));   // repère : avant à droite quand d > 0
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, yy + s * .05, s * (m === 'limo' ? 3.6 : 2.4), s * .18, 0, 0, TAU); ctx.fill();          // ombre
+    ctx.fillStyle = e.col; let wheels = [-1.5, 1.5], gl = [];
+    switch (m) {
+      case 'hatch':  P([[-2, 0], [-2, .8], [-1.6, 1.6], [.6, 1.6], [1.4, .9], [2, .7], [2, 0]]); gl = [[[-1.5, .85], [-1.4, 1.45], [.5, 1.45], [1.2, .85]]]; wheels = [-1.3, 1.3]; break;
+      case 'van':    P([[-2.4, 0], [-2.4, 1.9], [1.2, 1.9], [2, 1.2], [2.4, .8], [2.4, 0]]); gl = [[[1.1, .9], [1.1, 1.7], [1.9, 1.15]], [[-2.1, 1.1], [-2.1, 1.7], [-1.1, 1.7], [-1.1, 1.1]], [[-.9, 1.1], [-.9, 1.7], [.9, 1.7], [.9, 1.1]]]; wheels = [-1.6, 1.6]; break;
+      case 'pickup': P([[-2.5, 0], [-2.5, .9], [-.2, .9], [-.2, 1.7], [1, 1.7], [1.7, .9], [2.5, .8], [2.5, 0]]); gl = [[[-.05, 1], [-.05, 1.55], [.9, 1.55], [1.5, 1]]]; wheels = [-1.7, 1.6]; break;
+      case 'sports': P([[-2.6, 0], [-2.6, .55], [-1.9, .75], [-1.2, 1.15], [.4, 1.15], [1.6, .7], [2.6, .5], [2.6, 0]]); gl = [[[-1.1, .8], [-1, 1.05], [.3, 1.05], [1.3, .8]]]; wheels = [-1.7, 1.7]; break;
+      case 'cabrio': P([[-2.3, 0], [-2.3, .75], [-1.5, .85], [-1.2, .95], [.9, .95], [1.6, .8], [2.3, .7], [2.3, 0]]); gl = [[[.9, .95], [1.1, 1.45], [1.6, 1.45], [1.7, .95]]]; ctx.fillStyle = e.skin || '#e9c8a8'; ctx.beginPath(); ctx.arc(x + d * s * .2, yy - s * 1.25, s * .3, 0, TAU); ctx.fill(); ctx.fillStyle = e.col; break;   // conducteur cheveux au vent
+      case 'limo':   P([[-3.6, 0], [-3.6, .75], [-2.8, .85], [-2.3, 1.5], [1.6, 1.5], [2.5, .85], [3.6, .7], [3.6, 0]]); gl = [[[-2.1, .9], [-1.9, 1.38], [-1.1, 1.38], [-1.1, .9]], [[-.9, .9], [-.9, 1.38], [.2, 1.38], [.2, .9]], [[.4, .9], [.4, 1.38], [1.5, 1.38], [2.1, .9]]]; wheels = [-2.6, 2.6]; break;
+      case 'suv':    P([[-2.3, 0], [-2.3, 1.1], [-2, 1.9], [1, 1.9], [1.8, 1.1], [2.3, .95], [2.3, 0]]); gl = [[[-1.8, 1.15], [-1.7, 1.7], [-.2, 1.7], [-.2, 1.15]], [[0, 1.15], [0, 1.7], [.9, 1.7], [1.5, 1.15]]]; wheels = [-1.5, 1.5]; break;
+      default:       P([[-2.3, 0], [-2.3, .7], [-1.4, .8], [-.9, 1.5], [.9, 1.5], [1.6, .8], [2.3, .7], [2.3, 0]]); gl = [[[-.8, .85], [-.55, 1.38], [.7, 1.38], [1.3, .85]]];   // berline, taxi, police
+    }
+    ctx.fillStyle = glass; for (const g of gl) P(g);
+    if (m === 'sedan' || m === 'taxi' || m === 'police') { ctx.fillStyle = e.col; R(ctx, x - s * .05, yy - s * 1.4, s * .1, s * .55); }   // montant
+    if (m === 'taxi') { ctx.fillStyle = '#22252f'; R(ctx, x - s * .55, yy - s * 1.85, s * 1.1, s * .32); ctx.fillStyle = '#f5f5f5'; for (let i = 0; i < 3; i++) R(ctx, x - s * .45 + i * s * .35, yy - s * 1.78, s * .2, s * .18); ctx.fillStyle = '#22252f'; for (let i = 0; i < 6; i++) R(ctx, x - s * 2.1 + i * s * .7, yy - s * .55 - (i % 2) * s * .18, s * .35, s * .18); }   // enseigne et damier
+    if (m === 'police') { ctx.fillStyle = '#2f7fe8'; R(ctx, x - s * 2.3, yy - s * .55, s * 4.6, s * .22); const on = Math.sin(tn * 12) > 0; ctx.fillStyle = on ? '#2f7fe8' : '#ff3b30'; R(ctx, x - s * .7, yy - s * 1.75, s * .6, s * .25); ctx.fillStyle = on ? '#ff3b30' : '#2f7fe8'; R(ctx, x + s * .1, yy - s * 1.75, s * .6, s * .25); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = on ? 'rgba(80,140,255,.35)' : 'rgba(255,60,60,.35)'; ctx.beginPath(); ctx.arc(x, yy - s * 1.7, s * 1.4, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }   // gyrophare
+    const wr = m === 'suv' || m === 'pickup' ? .5 : .42;
+    for (const wx of wheels) { ctx.fillStyle = '#16181f'; ctx.beginPath(); ctx.arc(x + d * wx * s, yy, s * wr, 0, TAU); ctx.fill(); ctx.fillStyle = '#9aa0ad'; ctx.beginPath(); ctx.arc(x + d * wx * s, yy, s * .18, 0, TAU); ctx.fill(); }   // roues
+    const L = m === 'limo' ? 3.6 : m === 'sports' ? 2.6 : m === 'pickup' ? 2.5 : m === 'van' ? 2.4 : m === 'hatch' ? 2 : 2.3;
+    ctx.fillStyle = '#ffe9a8'; R(ctx, x + d * s * (L - .2), yy - s * .6, s * .2, s * .22); ctx.fillStyle = '#ff3b30'; R(ctx, x - d * s * L, yy - s * .6, s * .2, s * .22);                            // phares, feux
+    if (night) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,235,180,.18)'; P([[L, .5], [L + 4.7, 1.2], [L + 4.7, -.3]]); ctx.globalCompositeOperation = 'source-over'; }   // faisceau
+  },
+  walker(ctx, e, c) {
+    const { wTop, H, x, tn, wx } = c, s = H * .014 * (e.size || 1), yy = wTop + H * .178, d = e.dir, look = e.look || 'coat', run = look === 'runner', step = Math.sin(tn * (run ? 9 : look === 'elder' ? 3 : 5) + e.ph), ink = '#22252f', skin = e.skin || '#e9c8a8', hair = e.hair || ink, rain = wx && (wx.w === 'rain' || wx.w === 'storm');
+    const lean = look === 'elder' ? .25 : run ? .35 : 0, hx = d * lean * s;   // buste penché : l'aîné vers l'avant, le coureur aussi
+    ctx.strokeStyle = look === 'suit' ? ink : e.col; ctx.lineWidth = Math.max(1, s * (look === 'kid' ? .18 : .22)); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x, yy - s * 1.3); ctx.lineTo(x + step * s * (run ? .7 : .45), yy - (run ? Math.max(0, step) * s * .3 : 0)); ctx.moveTo(x, yy - s * 1.3); ctx.lineTo(x - step * s * (run ? .7 : .45), yy - (run ? Math.max(0, -step) * s * .3 : 0)); ctx.stroke();   // jambes
+    ctx.fillStyle = e.col;
+    if (look === 'dress') poly(ctx, [[x - s * .8, yy - s * 1.1], [x - s * .35, yy - s * 2.6], [x + s * .35, yy - s * 2.6], [x + s * .8, yy - s * 1.1]]);                       // robe
+    else if (look === 'hoodie') { poly(ctx, [[x - s * .5, yy - s * 1.2], [x - s * .45, yy - s * 2.6], [x + s * .45, yy - s * 2.6], [x + s * .5, yy - s * 1.2]]); ctx.beginPath(); ctx.arc(x + hx, yy - s * 3, s * .48, 0, TAU); ctx.fill(); }   // capuche
+    else if (look === 'suit') { ctx.fillStyle = '#2b2f3a'; poly(ctx, [[x - s * .45, yy - s * 1.2], [x - s * .4, yy - s * 2.6], [x + s * .4, yy - s * 2.6], [x + s * .45, yy - s * 1.2]]); ctx.fillStyle = e.col; R(ctx, x - s * .06, yy - s * 2.6, s * .12, s * .8); ctx.fillStyle = '#5a3a1a'; R(ctx, x - d * s * .95, yy - s * 1.4, s * .55, s * .45); }   // cravate, mallette
+    else if (look === 'runner') { poly(ctx, [[x - s * .4 + hx, yy - s * 1.3], [x - s * .35 + hx, yy - s * 2.5], [x + s * .35 + hx, yy - s * 2.5], [x + s * .4 + hx, yy - s * 1.3]]); }
+    else poly(ctx, [[x - s * .45 + hx * .5, yy - s * 1.2], [x - s * .4 + hx, yy - s * 2.6], [x + s * .4 + hx, yy - s * 2.6], [x + s * .45 + hx * .5, yy - s * 1.2]]);        // manteau
+    ctx.strokeStyle = look === 'suit' ? '#2b2f3a' : e.col; ctx.lineWidth = Math.max(1, s * .2); ctx.beginPath(); ctx.moveTo(x + hx, yy - s * 2.4); ctx.lineTo(x + hx - step * s * (run ? .7 : .4) * d, yy - s * (run ? 2.0 : 1.5)); ctx.stroke();   // bras
+    if (look !== 'hoodie') { ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + hx, yy - s * 3, s * .35, 0, TAU); ctx.fill(); ctx.fillStyle = hair; ctx.beginPath(); ctx.arc(x + hx, yy - s * 3.1, s * .37, Math.PI, 0); ctx.fill(); if (look === 'dress') { ctx.beginPath(); ctx.ellipse(x + hx - d * s * .25, yy - s * 2.75, s * .2, s * .45, 0, 0, TAU); ctx.fill(); } }   // tête, cheveux, longs pour la robe
+    if (look === 'hat') { ctx.fillStyle = ink; R(ctx, x + hx - s * .6, yy - s * 3.35, s * 1.2, s * .1); R(ctx, x + hx - s * .35, yy - s * 3.75, s * .7, s * .4); }             // chapeau
+    if (look === 'elder') { ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = Math.max(1, s * .12); ctx.beginPath(); ctx.moveTo(x + d * s * .5, yy - s * 1.5); ctx.lineTo(x + d * s * .8 + step * s * .1, yy); ctx.stroke(); }   // canne
+    if (look === 'kid') { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - d * s * .3, yy - s * 1.8); ctx.lineTo(x - d * s * .6 + Math.sin(tn + e.ph) * s * .2, yy - s * 4.2); ctx.stroke(); ctx.fillStyle = e.col === '#e8402f' ? '#2f7fe8' : '#e8402f'; ctx.beginPath(); ctx.ellipse(x - d * s * .6 + Math.sin(tn + e.ph) * s * .2, yy - s * 4.6, s * .35, s * .45, 0, 0, TAU); ctx.fill(); }   // ballon
+    if (rain && e.umb && look !== 'kid') { ctx.fillStyle = e.col === '#22252f' ? '#e8402f' : '#22252f'; ctx.beginPath(); ctx.arc(x + hx, yy - s * 3.5, s * 1.1, Math.PI, 0); ctx.fill(); ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + hx, yy - s * 3.5); ctx.lineTo(x + hx, yy - s * 1.6); ctx.stroke(); }   // parapluie
+    if (e.dog) { const dx = x - d * s * 1.8; ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - d * s * .3, yy - s * 1.6); ctx.lineTo(dx, yy - s * .55); ctx.stroke(); ctx.fillStyle = '#6b4a2b'; ctx.beginPath(); ctx.ellipse(dx, yy - s * .4, s * .7, s * .3, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(dx + d * s * .7, yy - s * .6, s * .25, 0, TAU); ctx.fill(); ctx.lineWidth = Math.max(1, s * .12); ctx.strokeStyle = '#6b4a2b'; ctx.beginPath(); for (const p of [-.4, .4]) { ctx.moveTo(dx + p * s, yy - s * .3); ctx.lineTo(dx + p * s + step * s * .2, yy); } ctx.stroke(); }   // chien en laisse
+  },
   bus(ctx, e, c) {
     const { wTop, H, x, sky, tn } = c, lane = e.lane, s = H * (lane ? .02 : .016), yy = wTop + H * (lane ? .112 : .058), d = e.dir, night = sky.day < .5;
     ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, yy + s * .05, s * 5.2, s * .2, 0, 0, TAU); ctx.fill();
@@ -2084,16 +2133,6 @@ const DRAW = {
     ctx.fillStyle = e.col; ctx.beginPath(); ctx.arc(x - s * .1 * d, yy - s * 2.4, s * .32, 0, TAU); ctx.fill();                                                                        // casque
   },
 
-  walker(ctx, e, c) {
-    const { wTop, H, x, tn, k } = c, s = H * .014 * (e.size || 1), yy = wTop + H * .178, d = e.dir, step = Math.sin(tn * 5 + e.ph), ink = '#22252f';
-    ctx.strokeStyle = ink; ctx.lineWidth = Math.max(1, s * .22); ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(x, yy - s * 1.3); ctx.lineTo(x + step * s * .45, yy); ctx.moveTo(x, yy - s * 1.3); ctx.lineTo(x - step * s * .45, yy); ctx.stroke();                    // jambes
-    ctx.fillStyle = e.col; poly(ctx, [[x - s * .45, yy - s * 1.2], [x - s * .4, yy - s * 2.6], [x + s * .4, yy - s * 2.6], [x + s * .45, yy - s * 1.2]]);                        // manteau
-    ctx.strokeStyle = e.col; ctx.beginPath(); ctx.moveTo(x, yy - s * 2.4); ctx.lineTo(x - step * s * .4 * d, yy - s * 1.5); ctx.stroke();                                          // bras
-    ctx.fillStyle = '#e9c8a8'; ctx.beginPath(); ctx.arc(x, yy - s * 3, s * .35, 0, TAU); ctx.fill();                                                                             // tête
-    ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(x, yy - s * 3.1, s * .37, Math.PI, 0); ctx.fill();                                                                             // cheveux
-    if (e.dog) { const dx = x - d * s * 1.8; ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - d * s * .3, yy - s * 1.6); ctx.lineTo(dx, yy - s * .55); ctx.stroke(); ctx.fillStyle = '#6b4a2b'; ctx.beginPath(); ctx.ellipse(dx, yy - s * .4, s * .7, s * .3, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(dx + d * s * .7, yy - s * .6, s * .25, 0, TAU); ctx.fill(); ctx.lineWidth = Math.max(1, s * .12); ctx.strokeStyle = '#6b4a2b'; ctx.beginPath(); for (const p of [-.4, .4]) { ctx.moveTo(dx + p * s, yy - s * .3); ctx.lineTo(dx + p * s + step * s * .2, yy); } ctx.stroke(); }   // chien en laisse
-  },
 
   tram(ctx, e, c) {
     const { wTop, H, x, sky, tn } = c, s = H * .016, yy = wTop + H * .058, d = e.dir, night = sky.day < .5, win = night ? 'rgba(255,235,180,.9)' : 'rgba(190,215,235,.85)';

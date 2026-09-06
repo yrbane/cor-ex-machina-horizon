@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 1.8.0 — 2026-09-06 · « La foule »
+
+- En ville, la rue est pleine : voitures, vélos et passants échappent à la limite de trois passages simultanés et ont leurs propres plafonds, huit voitures, trois vélos, sept passants, quatorze en tout. Le ciel garde sa règle.
+- Dix modèles de voitures : berline, citadine, fourgon, pick-up, sportive, taxi à enseigne et damier, police au gyrophare, cabriolet cheveux au vent, limousine, SUV, en dix couleurs. Deux voitures présentes en même temps n'ont jamais le même modèle dans la même couleur. On roule à droite : la voie proche va vers la droite, la voie du fond vers la gauche.
+- Huit allures de passants : manteau, robe, capuche, costume avec mallette, enfant au ballon, aîné à la canne, coureur, chapeau, avec des carnations, des cheveux et des couleurs variés, un chien parfois, et un parapluie quand il pleut. Deux passants présents en même temps ne se ressemblent pas.
+- Quatre tests de plus, 86 au total.
+
 ## 1.7.0 — 2026-09-06 · « Ville et Océan »
 
 - Troisième scène, « Ville » : les plans de loudness deviennent des rues d'immeubles, fenêtres allumées la nuit, antennes, clochers, enseignes au néon qui clignotent, lueur urbaine, route au premier plan avec trottoirs et lampadaires. Biomes cité moderne, vieille ville et néons, qui alternent par segments de cinq minutes.

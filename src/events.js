@@ -32,11 +32,11 @@ export const TYPES = {
   serpent:     { rate: 1 / 900, label: 'serpents de mer', single: true, where: 'water' },
   submarine:   { rate: 1 / 800, label: 'périscopes', single: true, where: 'water' },
   // Ville : sur la route et le trottoir
-  car:         { rate: 1 / 14,  label: 'voitures', where: 'city' },
+  car:         { rate: 1 / 2,   label: 'voitures', where: 'city', crowd: 8 },
   bus:         { rate: 1 / 60,  label: 'bus', where: 'city' },
   truck:       { rate: 1 / 90,  label: 'camions', where: 'city' },
-  bike:        { rate: 1 / 40,  label: 'vélos', where: 'city' },
-  walker:      { rate: 1 / 20,  label: 'passants', where: 'city' },
+  bike:        { rate: 1 / 12,  label: 'vélos', where: 'city', crowd: 3 },
+  walker:      { rate: 1 / 4,   label: 'passants', where: 'city', crowd: 7 },
   tram:        { rate: 1 / 240, label: 'tramways', where: 'city', single: true },
   // Fond des océans
   school:      { rate: 1 / 25,  label: 'bancs de poissons', where: 'sea' },
@@ -56,6 +56,19 @@ export const SEA_TYPES = Object.keys(TYPES).filter(k => TYPES[k].where === 'sea'
 export const BEHIND_CLOUDS = ['comet', 'shooting', 'satellite']; // ciel profond : dessinés avant les nuages
 export const TRANSIENT = ['shooting', 'fish', 'whale', 'fireworks', 'dolphins'];
 export const MAX_EVENTS = 3;   // passages simultanés au plus
+// La foule de la ville : voitures, vélos et passants ne comptent pas dans cette limite. Chacun a son plafond (crowd), la rue le sien, et personne ne se ressemble
+export const MAX_CROWD = 14;
+export const CROWD_TYPES = Object.keys(TYPES).filter(k => TYPES[k].crowd);
+export const CAR_MODELS = ['sedan', 'hatch', 'van', 'pickup', 'sports', 'taxi', 'police', 'cabrio', 'limo', 'suv'];
+export const CAR_COLORS = ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152', '#ff8c42', '#7fd1ff', '#c0392b'];
+export const WALKER_LOOKS = ['coat', 'dress', 'hoodie', 'suit', 'kid', 'elder', 'runner', 'hat'];
+export const WALKER_COLORS = ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5', '#1fbf8a', '#ff8c42', '#22252f'];
+// Choisit un couple (a, b) qui n'est porté par aucun des passages déjà présents ; à défaut, n'importe lequel
+function distinctPair(rng, existing, keyA, keyB, A, B) {
+  const used = new Set(existing.map(e => e[keyA] + '/' + e[keyB])), free = [];
+  for (const a of A) for (const b of B) if (!used.has(a + '/' + b)) free.push([a, b]);
+  return free.length ? free[Math.floor(rng() * free.length)] : [pick(rng, A), pick(rng, B)];
+}
 
 // Espèces d'oiseaux : taille, cadence de battement, vitesse, ondulation, vol plané
 export const SPECIES = [
@@ -75,8 +88,10 @@ export function canSpawn(type, sky, weather, events) {
   if (T.night && night < .5) return false;
   if (T.day && sky.day < .5) return false;
   if (T.light && (weather.w === 'rain' || weather.w === 'storm')) return false;
-  if (events.length >= MAX_EVENTS) return false;
-  if (events.some(e => e.type === type)) return false;   // jamais deux passages du même type en même temps
+  if (T.crowd) return events.filter(e => e.type === type).length < T.crowd && events.filter(e => TYPES[e.type].crowd).length < MAX_CROWD;   // la foule a ses propres limites, et se répète
+  const others = events.filter(e => !TYPES[e.type].crowd);
+  if (others.length >= MAX_EVENTS) return false;
+  if (others.some(e => e.type === type)) return false;   // jamais deux passages du même type en même temps
   return true;
 }
 // Taux effectif : la nuit noire favorise le nocturne, le jour franc le diurne, les ovnis préfèrent la nuit
@@ -86,7 +101,7 @@ function effectiveRate(type, sky) {
   return r;
 }
 
-export function spawn(type, rng, tn) {
+export function spawn(type, rng, tn, existing = []) {
   const dir = rng() < .5 ? 1 : -1, x0 = dir > 0 ? -.12 : 1.12, e = { type, dir, x: x0, born: tn, ph: rng() * TAU, seed: rng() };
   switch (type) {
     case 'bird': { const sp = pick(rng, SPECIES); Object.assign(e, { sp, y: rnd(rng, .12, .55), v: rnd(rng, sp.v[0], sp.v[1]), size: sp.size * rnd(rng, .8, 1.2), wob: sp.wob, heading: rnd(rng, -.3, .3), turn: rnd(rng, -.2, .2), swoop: 0 }); break; }
@@ -118,11 +133,11 @@ export function spawn(type, rng, tn) {
     case 'dolphins': Object.assign(e, { x: rnd(rng, .15, .85), d: rnd(rng, .15, .6), life: 0, ttl: 2.2, n: 1 + Math.floor(rng() * 2) }); break;
     case 'serpent': Object.assign(e, { d: rnd(rng, .1, .4), v: rnd(rng, .006, .01), size: rnd(rng, .9, 1.3) }); break;
     case 'submarine': Object.assign(e, { d: rnd(rng, .2, .6), v: rnd(rng, .004, .008) }); break;
-    case 'car': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .08, .13), col: pick(rng, ['#e8402f', '#f2c230', '#f5f5f5', '#2f7fe8', '#1fbf8a', '#8e44ad', '#3a4152']), size: rnd(rng, .9, 1.1) }); break;
-    case 'bus': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
-    case 'truck': Object.assign(e, { lane: rng() < .5 ? 0 : 1, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
+    case 'car': { const [model, col] = distinctPair(rng, existing.filter(o => o.type === 'car'), 'model', 'col', CAR_MODELS, CAR_COLORS); Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .07, .13) * (model === 'sports' ? 1.4 : model === 'limo' ? .8 : 1), model, col: model === 'taxi' ? '#f2c230' : model === 'police' ? '#f5f5f5' : col, size: rnd(rng, .9, 1.1) }); break; }
+    case 'bus': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .07), col: pick(rng, ['#1fbf8a', '#2f7fe8', '#f2c230']) }); break;
+    case 'truck': Object.assign(e, { lane: dir > 0 ? 1 : 0, v: rnd(rng, .05, .08), col: pick(rng, ['#f5f5f5', '#e8402f', '#3a4152']) }); break;
     case 'bike': Object.assign(e, { lane: 2, v: rnd(rng, .03, .045), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230']) }); break;
-    case 'walker': Object.assign(e, { lane: 3, v: rnd(rng, .012, .02), col: pick(rng, ['#e8402f', '#2f7fe8', '#f2c230', '#8e44ad', '#f5f5f5']), size: rnd(rng, .85, 1.15), dog: rng() < .25 }); break;
+    case 'walker': { const [look, col] = distinctPair(rng, existing.filter(o => o.type === 'walker'), 'look', 'col', WALKER_LOOKS, WALKER_COLORS); Object.assign(e, { lane: 3, v: rnd(rng, .012, .02) * (look === 'runner' ? 2.2 : look === 'elder' ? .6 : 1), look, col, size: look === 'kid' ? rnd(rng, .6, .7) : rnd(rng, .9, 1.15), dog: look !== 'kid' && rng() < .2, umb: rng() < .7, skin: pick(rng, ['#e9c8a8', '#c68642', '#8d5524', '#f1d3b3']), hair: pick(rng, ['#22252f', '#5a3a1a', '#d9b56c', '#b0b4bf', '#a0302a']) }); break; }
     case 'tram': Object.assign(e, { lane: 0, v: rnd(rng, .05, .06), col: '#f2c230' }); break;
     case 'school': Object.assign(e, { y: rnd(rng, .15, .7), v: rnd(rng, .04, .07), n: 12 + Math.floor(rng() * 16), col: pick(rng, ['#9ad0ff', '#ffd27a', '#c9a0ff', '#8ff0d0']), size: rnd(rng, .8, 1.2) }); break;
     case 'shark': Object.assign(e, { y: rnd(rng, .2, .6), v: rnd(rng, .035, .05), size: rnd(rng, 1, 1.4) }); break;
@@ -140,7 +155,7 @@ export function spawn(type, rng, tn) {
 
 // Fait vivre la liste : apparitions, mouvements propres à chaque type, disparition hors champ
 export function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null) {
-  for (const k in TYPES) if ((!allowed || allowed.includes(k)) && canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn));
+  for (const k in TYPES) if ((!allowed || allowed.includes(k)) && canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn, list));
   for (let i = list.length - 1; i >= 0; i--) {
     const e = list[i], age = tn - e.born;
     if (TRANSIENT.includes(e.type)) { e.life += dt; if (e.life > e.ttl) list.splice(i, 1); continue; }

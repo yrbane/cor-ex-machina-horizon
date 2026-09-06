@@ -18,7 +18,7 @@ python -m http.server 8080
 
 puis ouvrir `http://localhost:8080/` et cliquer sur la page. Servie en HTTP, la page analyse le son en temps réel. Ouverte directement depuis le disque, elle suit l'analyse précalculée, ou le son si on charge le fichier avec la touche `o`.
 
-Quatre scènes sur le même moteur : Horizon, au bord de l'eau ; Vallée, entre des montagnes verdoyantes, désertiques ou enneigées ; Ville, moderne, ancienne ou sous les néons, avec son trafic et ses passants ; Océan, du récif aux abysses, avec sa faune. Les biomes alternent, la scène change à chaque nouveau morceau, ou avec `s`.
+Quatre scènes sur le même moteur : Horizon, au bord de l'eau ; Vallée, entre des montagnes verdoyantes, désertiques ou enneigées ; Ville, moderne, ancienne ou sous les néons, avec une vraie foule de voitures et de passants tous différents ; Océan, du récif aux abysses, avec sa faune. Les biomes alternent, la scène change à chaque nouveau morceau, ou avec `s`.
 
 Commandes : `c` affiche la barre de contrôles, `p` ouvre la playlist pour lire d'autres morceaux, clic dans l'eau pour lire ou mettre en pause, clic sur le paysage pour sauter au temps visé, molette pour avancer ou reculer, flèches, Page haut et bas, Début et Fin, `f` pour le plein écran, `?` pour la console de documentation et de statistiques.
 

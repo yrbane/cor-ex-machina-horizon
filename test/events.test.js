@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES, BEHIND_CLOUDS, MAX_EVENTS } from '../src/events.js';
+import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES, BEHIND_CLOUDS, MAX_EVENTS, CROWD_TYPES, MAX_CROWD, CAR_MODELS, WALKER_LOOKS } from '../src/events.js';
 import { seeded } from './fakeCtx.js';
 
 const day = { day: 1, dusk: 0 }, night = { day: 0, dusk: 0 };
@@ -36,8 +36,8 @@ test('jamais plus de trois passages à la fois, jamais deux du même type', () =
   assert.equal(canSpawn('bird', day, clear, [{ type: 'bird' }]), false, 'un oiseau à la fois');
   assert.equal(canSpawn('bird', day, clear, [{ type: 'kite' }, { type: 'ship' }, { type: 'drone' }]), false, 'trois déjà présents');
   assert.equal(canSpawn('bird', day, clear, [{ type: 'kite' }, { type: 'ship' }]), true);
-  const rng = seeded(5), list = [];
-  for (let i = 0; i < 4000; i++) { tickEvents(list, .5, day, .005, clear, rng, i * .5); assert.ok(list.length <= 3, 'jamais plus de trois'); assert.equal(new Set(list.map(e => e.type)).size, list.length, 'types tous différents'); }
+  const rng = seeded(5), list = [], calm = Object.keys(TYPES).filter(k => !TYPES[k].crowd);   // hors foule de la ville, qui a sa propre règle
+  for (let i = 0; i < 4000; i++) { tickEvents(list, .5, day, .005, clear, rng, i * .5, calm); assert.ok(list.length <= 3, 'jamais plus de trois'); assert.equal(new Set(list.map(e => e.type)).size, list.length, 'types tous différents'); }
 });
 
 test('spawn crée un passage hors écran, avec ses paramètres, pour chaque type', () => {
@@ -111,4 +111,41 @@ test('tickEvents respecte la liste des types admis par la scène', () => {
   for (let i = 0; i < 4000; i++) tickEvents(list, .5, day, .005, clear, rng, i * .5, allowed);
   assert.ok(list.length > 0);
   assert.ok(list.every(e => allowed.includes(e.type)));
+});
+
+test('en ville, la foule : voitures, passants et vélos ne comptent pas dans la limite de trois et peuvent être nombreux', () => {
+  const rng = seeded(9), list = [];
+  assert.deepEqual(CROWD_TYPES, ['car', 'bike', 'walker']);
+  for (const t of ['bird', 'airliner', 'ufo']) list.push(spawn(t, rng, 0));
+  assert.equal(canSpawn('car', day, clear, list), true, 'trois passages du ciel ne bloquent pas la rue');
+  for (let i = 0; i < 6; i++) list.push(spawn('car', rng, 0, list));
+  assert.equal(canSpawn('car', day, clear, list), true, 'plusieurs voitures à la fois');
+  assert.equal(canSpawn('walker', day, clear, list), true);
+  assert.equal(canSpawn('balloon', day, clear, list), false, 'les passages du ciel restent limités à trois');
+  assert.equal(canSpawn('bus', day, clear, list), false, 'le bus compte comme un passage ordinaire');
+  while (canSpawn('walker', day, clear, list)) list.push(spawn('walker', rng, 0, list));
+  assert.equal(list.filter(e => e.type === 'walker').length, TYPES.walker.crowd, 'les passants ont leur plafond');
+  assert.equal(canSpawn('car', day, clear, list), true, 'les voitures ont le leur');
+  while (canSpawn('car', day, clear, list)) list.push(spawn('car', rng, 0, list));
+  assert.equal(canSpawn('bike', day, clear, list), false, 'la rue est pleine');
+  assert.ok(MAX_CROWD >= 12 && list.filter(e => CROWD_TYPES.includes(e.type)).length <= MAX_CROWD);
+});
+
+test('deux voitures ou deux passants présents en même temps ne se ressemblent pas', () => {
+  const rng = seeded(3), cars = []; for (let i = 0; i < 12; i++) cars.push(spawn('car', rng, 0, cars));
+  assert.equal(new Set(cars.map(e => e.model + '/' + e.col)).size, 12, 'modèle et couleur uniques');
+  assert.ok(cars.every(c => CAR_MODELS.includes(c.model)) && CAR_MODELS.length >= 8);
+  assert.ok(cars.every(c => (c.dir > 0) === (c.lane === 1)), 'on roule à droite : la voie proche va vers la droite');
+  const ppl = []; for (let i = 0; i < 12; i++) ppl.push(spawn('walker', rng, 0, ppl));
+  assert.equal(new Set(ppl.map(e => e.look + '/' + e.col)).size, 12);
+  assert.ok(ppl.every(p => WALKER_LOOKS.includes(p.look)) && WALKER_LOOKS.length >= 6);
+});
+
+test('tickEvents en ville fait naître une foule variée sans jamais dépasser sa limite', () => {
+  const rng = seeded(11), list = [], allowed = Object.keys(TYPES).filter(k => (TYPES[k].where || 'sky') === 'sky' || TYPES[k].where === 'city');
+  for (let i = 0; i < 4000; i++) tickEvents(list, .05, day, .003, clear, rng, i * .05, allowed);
+  const crowd = list.filter(e => CROWD_TYPES.includes(e.type)), others = list.filter(e => !CROWD_TYPES.includes(e.type));
+  assert.ok(crowd.length <= MAX_CROWD && others.length <= MAX_EVENTS);
+  assert.ok(crowd.length >= 4, `une vraie foule (${crowd.length})`);
+  const cars = crowd.filter(e => e.type === 'car'); assert.equal(new Set(cars.map(e => e.model + '/' + e.col)).size, cars.length);
 });

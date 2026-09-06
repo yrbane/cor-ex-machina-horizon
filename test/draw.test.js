@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fakeCtx, seeded } from './fakeCtx.js';
-import { spawn, TYPES } from '../src/events.js';
+import { spawn, TYPES, CAR_MODELS, WALKER_LOOKS } from '../src/events.js';
 import { drawEvent } from '../src/draw/events.js';
 import { drawBody } from '../src/draw/bodies.js';
 import { layerValue, drawLayer, makeLayers } from '../src/draw/landscape.js';
@@ -88,4 +88,12 @@ test('un plan silencieux reste plat et invisible, sans trait lumineux : pas de r
   const ctx = fakeCtx();
   drawLayer(ctx, L, 10, { ...scene, parX: 0 }, day, 3);
   assert.equal(ctx.count('stroke'), 0, 'aucun contour tracé quand tout est plat');
+});
+
+test('chaque modèle de voiture et chaque allure de passant a son dessin, de jour comme sous la pluie la nuit', () => {
+  const rng = seeded(8), rainy = { ...scene, wx: { w: 'rain', k: 1 } };
+  const counts = new Set();
+  for (const model of CAR_MODELS) { const e = spawn('car', rng, 0); e.model = model; e.x = .5; const ctx = fakeCtx(); drawEvent(ctx, e, rainy, night); assert.ok(ctx.count('fill') + ctx.count('fillRect') > 6, model); counts.add(ctx.count('fill') * 100 + ctx.count('fillRect')); }
+  for (const look of WALKER_LOOKS) { const e = spawn('walker', rng, 0); e.look = look; e.x = .5; e.umb = true; const ctx = fakeCtx(); drawEvent(ctx, e, rainy, day); assert.ok(ctx.count('stroke') >= 2 && ctx.count('fill') >= 1, look); counts.add(ctx.count('fill') * 100 + ctx.count('stroke') + 7); }
+  assert.ok(counts.size >= 10, 'des silhouettes bien différentes');
 });
