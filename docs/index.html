@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="cor-ex-machina-horizon 1.5.1">
+<meta name="generator" content="cor-ex-machina-horizon 1.6.0">
 <title>Cor ex machina, horizon</title>
 <style>
   :root { --ink: #eae7dd; --ink-2: #a9aec0; --ink-3: #6b7188; --line: rgba(255,255,255,.12); --series: #5aa0f0; --sub: #d95926; --bass: #199e70; --mid: #c98500; --high: #d55181; }
@@ -111,6 +111,8 @@
   .keys { display: grid; grid-template-columns: max-content 1fr; gap: .45rem 1rem; align-items: baseline; margin: .4rem 0 0; }
   .keys dt { margin: 0; white-space: nowrap; } .keys dd { margin: 0; color: var(--ink-2); font-size: .9rem; }
   #console kbd { display: inline-block; min-width: 1.6em; text-align: center; padding: .05em .45em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: .85em; }
+  #console select, #console input[type=checkbox] { font: inherit; color: var(--ink); background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 8px; padding: .25em .5em; }
+  #console select option { color: #111; }
   .lead { color: var(--ink-2); font-size: .95rem; line-height: 1.5; max-width: 70ch; }
   #console h2 { display: flex; align-items: center; gap: .5rem; }
   #console h2 small { font-weight: 400; color: var(--ink-3); font-size: .8rem; }
@@ -124,7 +126,7 @@
 <aside id="console" hidden>
   <button class="close" id="closeBtn">Fermer (Échap)</button>
   <header>
-    <h1>Cor ex machina, horizon <small>version 1.5.1</small></h1>
+    <h1>Cor ex machina, horizon <small>version 1.6.0</small></h1>
     <p id="stateLine"></p>
   </header>
   <nav class="tabs" role="tablist">
@@ -143,7 +145,8 @@
           <dt><kbd>molette</kbd></dt><dd>avance ou recule, dix fois plus vite avec <kbd>Maj</kbd></dd>
           <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>10 s, ou 1 min avec <kbd>Maj</kbd> ; <kbd>Page ↑</kbd> <kbd>Page ↓</kbd> 5 min ; <kbd>Début</kbd> <kbd>Fin</kbd></dd>
           <dt><kbd>espace</kbd></dt><dd>lecture ou pause</dd>
-          <dt><kbd>c</kbd></dt><dd>barre de contrôles : transport, position, volume, VU-mètre</dd>
+          <dt><kbd>c</kbd></dt><dd>barre de contrôles : transport, position, volume, VU-mètre, scène</dd>
+          <dt><kbd>s</kbd></dt><dd>scène suivante : Horizon, Vallée</dd>
           <dt><kbd>p</kbd> <kbd>n</kbd> <kbd>b</kbd></dt><dd>playlist, piste suivante, piste précédente</dd>
           <dt><kbd>o</kbd></dt><dd>ajouter des fichiers audio</dd>
           <dt><kbd>f</kbd> ou double clic</dt><dd>plein écran</dd>
@@ -151,6 +154,9 @@
         </dl>
       </div>
       <div>
+        <h2>Scène</h2>
+        <p class="lead"><label>Scène affichée <select id="sceneSel"></select></label></p>
+        <p class="lead"><label><input type="checkbox" id="autoScene" checked> Changer de scène à chaque nouveau morceau</label> · <kbd>s</kbd> passe à la scène suivante</p>
         <h2>Ce que montre le paysage</h2>
         <p class="lead">Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</p>
         <p class="lead">Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. Le cœur du set bat dans l'astre levé.</p>
@@ -1444,8 +1450,8 @@ function spawn(type, rng, tn) {
 }
 
 // Fait vivre la liste : apparitions, mouvements propres à chaque type, disparition hors champ
-function tickEvents(list, dt, sky, wind, weather, rng, tn) {
-  for (const k in TYPES) if (canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn));
+function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null) {
+  for (const k in TYPES) if ((!allowed || allowed.includes(k)) && canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn));
   for (let i = list.length - 1; i >= 0; i--) {
     const e = list[i], age = tn - e.born;
     if (TRANSIENT.includes(e.type)) { e.life += dt; if (e.life > e.ttl) list.splice(i, 1); continue; }
@@ -1589,10 +1595,11 @@ function layerValue(L, tt, step = L.step) {
 }
 
 // Silhouette d'un plan centrée sur l'instant présent, avec brume et lumière du jour ; rien n'est tracé si tout est plat
-function drawLayer(ctx, L, t, scene, sky, i) {
+function drawLayer(ctx, L, t, scene, sky, i, opts = {}) {
   const { W, H, horizon, parX = 0, disp, hue = 0 } = scene, depth = i / 3;
-  const y0 = horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05);
-  const t0 = t - L.win / 2, amp = H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15), step = 3;
+  const y0 = opts.y0 !== undefined ? opts.y0 : horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05);
+  const t0 = t - L.win / 2, amp = opts.amp !== undefined ? opts.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15), step = 3;
+  const col = opts.colors;   // { h, s, l } fixes une teinte de scène ; sinon la palette dérivante de la bande
   let maxV = 0;
   ctx.beginPath(); ctx.moveTo(0, y0);
   for (let x = 0; x <= W; x += step) { const v = layerValue(L, t0 + (x - px) / W * L.win); if (v > maxV) maxV = v; ctx.lineTo(x, y0 - v * amp); }
@@ -1600,6 +1607,14 @@ function drawLayer(ctx, L, t, scene, sky, i) {
   if (maxV <= 0) return;
   const dl = sky.day * (14 + L.fog * 22), ds = sky.day * 20, warm = sky.dusk * 10;
   const g = ctx.createLinearGradient(0, y0 - amp, 0, y0);
+  if (col) {
+    const night = 1 - sky.day, fog = L.fog * 30;
+    g.addColorStop(0, `hsla(${col.h},${Math.max(0, col.s - fog * .6)}%,${clamp(col.l + 8 + fog * .4 - night * 26, 0, 100)}%,${L.a})`);
+    g.addColorStop(1, `hsla(${col.h},${Math.max(0, col.s - fog * .4)}%,${clamp(col.l - 8 + fog * .2 - night * 30, 0, 100)}%,${L.a})`);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = `hsla(${col.h},${col.s}%,${clamp(col.l + 22 - night * 20, 0, 100)}%,${(.35 - L.fog * .25) * clamp(maxV * 3, 0, 1)})`; ctx.lineWidth = 1.2; ctx.stroke();
+    return;
+  }
   g.addColorStop(0, hsl(hue, L.band, 55 - L.fog * 30 - ds, L.l + 10 + L.fog * 20 + dl + warm, L.a));
   g.addColorStop(1, hsl(hue, L.band, 60 - L.fog * 30 - ds, L.l - 6 + L.fog * 14 + dl * .7, L.a));
   ctx.fillStyle = g; ctx.fill();
@@ -1607,10 +1622,10 @@ function drawLayer(ctx, L, t, scene, sky, i) {
 }
 
 // Temps visé par un point de l'écran : le plan touché donne l'échelle, sinon le lointain
-function timeAt(layers, xs, ys, t, scene) {
+function timeAt(layers, xs, ys, t, scene, geom) {
   const { W, H, horizon, parX = 0, disp } = scene;
   for (let i = layers.length - 1; i >= 0; i--) {
-    const L = layers[i], depth = i / 3, y0 = horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05), amp = H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15);
+    const L = layers[i], depth = i / 3, gg = geom ? geom(i) : null, y0 = gg ? gg.y0 : horizon + H * .02 * i, px = W / 2 - parX * W * (.01 + depth * .05), amp = gg ? gg.amp : H * L.h * (.85 + (disp ? disp[L.band] : .5) * .15);
     const tt = t + (xs - px) / W * L.win, v = layerValue(L, tt);
     if (ys >= y0 - v * amp && ys <= y0) return tt;
   }
@@ -2116,8 +2131,8 @@ class Console {
     return [x, r.width, r.height];
   }
   render(state) {
-    const { t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap, track, dur } = state, a = this.getA(), st = a.at(a.S, t), mo = a.at(a.M, t), pk = a.at(a.PK, t), $ = this.$, isLive = !!a.feed;
-    $('stateLine').textContent = `${track ? track + ' — ' : ''}${playing ? 'Lecture' : 'Pause'} à ${tc(t)} sur ${tc(dur)}. ${isLive ? 'Paysage construit en direct à l’écoute.' : ''}${live ? 'Analyse du son en direct.' : 'Analyse précalculée, le son n’est pas accessible à la page : sers-la en HTTP ou charge le fichier avec o.'}`;
+    const { t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap, track, dur, scene } = state, a = this.getA(), st = a.at(a.S, t), mo = a.at(a.M, t), pk = a.at(a.PK, t), $ = this.$, isLive = !!a.feed;
+    $('stateLine').textContent = `${scene ? 'Scène ' + scene + ' — ' : ''}${track ? track + ' — ' : ''}${playing ? 'Lecture' : 'Pause'} à ${tc(t)} sur ${tc(dur)}. ${isLive ? 'Paysage construit en direct à l’écoute.' : ''}${live ? 'Analyse du son en direct.' : 'Analyse précalculée, le son n’est pas accessible à la page : sers-la en HTTP ou charge le fichier avec o.'}`;
     const cyc = sky.u < .5 ? `jour, ${Math.round(sky.u * 200)} %` : `nuit, ${Math.round((sky.u - .5) * 200)} %`;
     const items = [[tc(t), 'position'], [`${fr(st)} LUFS`, 'court terme'], [`${fr(mo)} LUFS`, 'momentané'], [`${fr(pk)} dBFS`, 'crête'],
       [String(this.stats.kicks), 'coups de sub détectés'], [`${Math.round(this.stats.fps)} i/s`, `cadence, plafond ${fpsCap}`], [`${W} × ${H}`, `rendu, qualité ${Math.round(Q * 100)} %`], [`${fr(this.stats.work, 1)} ms`, 'calcul par image'],
@@ -2550,6 +2565,9 @@ class ControlsBar {
         <pt-vumeter id="ctVu" segments="18" orientation="h"></pt-vumeter>
         <span class="ctl-led"><pt-led id="ctLive" color="#3ddc84"></pt-led><small>direct</small></span>
       </div>
+      <div class="ctl-group ctl-scene">
+        <pt-stepper id="ctScene" options="${(api.scenes || ['Horizon']).join(',')}" value="${(api.scenes || ['Horizon'])[0]}" label="Scène"></pt-stepper>
+      </div>
       <div class="ctl-group ctl-panels">
         <pt-button id="ctList" title="Playlist (p)">Playlist</pt-button>
         <pt-button id="ctHelp" title="Aide et statistiques (?)">Aide</pt-button>
@@ -2562,8 +2580,10 @@ class ControlsBar {
     this.pos.addEventListener('input', e => { this.dragging = true; this.time.textContent = api.tc(e.detail / 1000 * api.duration()); });
     this.pos.addEventListener('change', e => { this.dragging = false; api.seek(e.detail / 1000 * api.duration()); });
     this.vol.addEventListener('input', e => api.volume(e.detail)); this.vol.addEventListener('change', e => api.volume(e.detail));
+    this.sceneEl = $('ctScene'); this.sceneEl.addEventListener('change', e => api.setScene(e.detail));
     $('ctList').addEventListener('press', () => api.togglePlaylist()); $('ctHelp').addEventListener('press', () => api.toggleConsole()); $('ctFull').addEventListener('press', () => api.fullscreen());
   }
+  setScene(name) { if (this.sceneEl && this.sceneEl.value !== name) this.sceneEl.setAttribute('value', name); }   // pt-stepper expose value en lecture seule, l'attribut pilote
   get hidden() { return this.el.hidden; }
   toggle(show) { this.el.hidden = show === undefined ? !this.el.hidden : !show; if (!this.el.hidden) this.tick(); }
   // Rafraîchit position, VU-mètre, témoin et bouton de lecture ; à appeler à chaque image quand la barre est visible
@@ -2576,6 +2596,226 @@ class ControlsBar {
     this.vu.level = api.level(); this.led.on = api.live();
     if (Math.abs(this.vol.value - api.getVolume()) > .01 && !this.volDragging) this.vol.value = api.getVolume();
   }
+}
+
+// ---- src/scenes/registry.js
+
+// Registre des scènes : même moteur, compositions différentes
+const SCENES = [
+  { id: 'horizon', name: 'Horizon', water: true, blurb: 'montagnes au bord de l’eau, reflets et voiliers' },
+  { id: 'valley', name: 'Vallée', water: false, blurb: 'vallée de montagne, biomes verdoyants, désertiques ou enneigés' },
+];
+const sceneById = id => SCENES.find(s => s.id === id) || SCENES[0];
+const nextSceneId = id => { const i = SCENES.findIndex(s => s.id === id); return SCENES[(i + 1) % SCENES.length].id; };
+// Types de passages admis dans une scène : sans eau, pas de bateau ni de baleine
+const allowedTypes = id => Object.keys(TYPES).filter(t => sceneById(id).water || !WATER_TYPES.includes(t));
+
+// ---- src/scenes/biome.js
+
+// Biomes de la vallée : segments de quatre minutes, jamais deux fois le même de suite, transition douce de vingt secondes
+const BIOMES = ['green', 'desert', 'snow'];
+const BSEG = 240;
+const seq = [];
+function biomeOf(seg) {
+  if (seg < 0) return BIOMES[0];
+  while (seq.length <= seg) {
+    const i = seq.length, prev = i ? seq[i - 1] : null, choices = BIOMES.filter(b => b !== prev);
+    seq.push(choices[Math.floor(hash(i * 2.3 + 17) * choices.length)]);
+  }
+  return seq[seg];
+}
+function biomeAt(t) {
+  const seg = Math.floor(t / BSEG), local = t - seg * BSEG;
+  return { b: biomeOf(seg), prev: biomeOf(seg - 1), k: clamp(local / 20, 0, 1), seg };
+}
+
+// Palettes : plans du lointain au proche, sol, ciel, végétation
+const PAL = {
+  green:  { layers: [{ h: 150, s: 30, l: 34 }, { h: 140, s: 38, l: 30 }, { h: 125, s: 42, l: 30 }, { h: 110, s: 45, l: 28 }], floor: { h: 105, s: 40, l: 32 }, sky: { top: { h: 210, s: 55, l: 52 }, bottom: { h: 200, s: 40, l: 78 } }, veg: 'pine', snowline: 0 },
+  desert: { layers: [{ h: 28, s: 40, l: 52 }, { h: 26, s: 48, l: 46 }, { h: 22, s: 55, l: 42 }, { h: 18, s: 60, l: 38 }], floor: { h: 36, s: 45, l: 58 }, sky: { top: { h: 205, s: 60, l: 56 }, bottom: { h: 40, s: 50, l: 80 } }, veg: 'cactus', snowline: 0 },
+  snow:   { layers: [{ h: 215, s: 18, l: 78 }, { h: 212, s: 22, l: 70 }, { h: 210, s: 24, l: 62 }, { h: 208, s: 26, l: 54 }], floor: { h: 210, s: 15, l: 84 }, sky: { top: { h: 215, s: 35, l: 60 }, bottom: { h: 210, s: 25, l: 86 } }, veg: 'fir', snowline: 1 },
+};
+const mix = (a, b, k) => ({ h: lerp(a.h, b.h, k), s: lerp(a.s, b.s, k), l: lerp(a.l, b.l, k) });
+function biomePalette({ b, prev, k }) {
+  const A = PAL[prev] || PAL[b], B = PAL[b];
+  return {
+    layers: B.layers.map((c, i) => mix(A.layers[i], c, k)), floor: mix(A.floor, B.floor, k),
+    sky: { top: mix(A.sky.top, B.sky.top, k), bottom: mix(A.sky.bottom, B.sky.bottom, k) },
+    veg: k < .5 ? A.veg : B.veg, snowline: lerp(A.snowline, B.snowline, k), b, prev, k,
+  };
+}
+
+// ---- src/scenes/sky.js
+
+
+
+
+
+
+// Ciel commun aux scènes : fond, crépuscule, assombrissement météo, étoiles, aurore.
+// biome (facultatif) : couleurs de jour propres à la scène, mélangées avec la nuit commune selon sky.day.
+function drawSky(ctx, S, horizon, biome) {
+  const { W, H, sky, wx, lvl, hue, kickFlash, tn, stars, parX, parY, disp, t } = S, hb = (HUES.bass + hue) % 360, hs = (HUES.sub + hue) % 360;
+  const bottomY = biome && biome.floorTo ? biome.floorTo : horizon + H * .06;
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  const g = ctx.createLinearGradient(0, 0, 0, horizon);
+  if (biome) {
+    // Nuit commune vers jour du biome
+    g.addColorStop(0, `hsl(${hb},40%,${4 + lvl * 3}%)`); g.addColorStop(1, `hsl(${hs},60%,${16 + lvl * 10 + kickFlash * 20}%)`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, bottomY);
+    if (sky.day > 0) { const d = ctx.createLinearGradient(0, 0, 0, horizon); d.addColorStop(0, biome.top); d.addColorStop(1, biome.bottom); ctx.globalAlpha = sky.day; ctx.fillStyle = d; ctx.fillRect(0, 0, W, bottomY); ctx.globalAlpha = 1; }
+  } else {
+    g.addColorStop(0, `hsl(${lerp(hb, 215, sky.day)},${lerp(40, 55, sky.day)}%,${lerp(4 + lvl * 3, 52, sky.day)}%)`);
+    g.addColorStop(.7, `hsl(${lerp(hs, 208, sky.day)},${lerp(45, 50, sky.day)}%,${lerp(9 + lvl * 6, 66, sky.day)}%)`);
+    g.addColorStop(1, `hsl(${lerp(hs, 200, sky.day)},${lerp(60, 45, sky.day)}%,${lerp(16 + lvl * 10 + kickFlash * 20, 78, sky.day)}%)`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, bottomY);
+  }
+  if (sky.dusk > .02) { const d = ctx.createLinearGradient(0, horizon * .45, 0, horizon); d.addColorStop(0, hsl(hue, 'sub', 85, 50, 0)); d.addColorStop(1, hsl(hue, 'sub', 85, 50, sky.dusk * .55)); ctx.fillStyle = d; ctx.fillRect(0, 0, W, horizon); }
+  if (wx.dark > 0) { ctx.fillStyle = `rgba(8,10,18,${wx.dark * .5})`; ctx.fillRect(0, 0, W, horizon); }
+  const starA = (1 - sky.day) * (1 - wx.dark), starShift = (t / 3600) % 1;
+  if (starA > .02) for (const s of stars) { const x = (((s.x - starShift * .5 - parX * .02) % 1) + 1) % 1 * W, y = (s.y - parY * .02) * horizon, tw = .5 + .5 * Math.sin(tn * 2 + s.p); ctx.fillStyle = `rgba(${s.col},${(.25 + tw * .35 + disp.high * .3) * starA})`; ctx.fillRect(x, y, s.s, s.s); }
+  if (wx.w === 'aurora' && starA > .4) drawAurora(ctx, tn, wx.k * starA, horizon, W, hue, disp.mid);
+}
+
+// Astres, un seul à la fois, découpés au-dessus de l'horizon ; ondes des coups depuis l'astre visible
+function drawBodies(ctx, S, horizon) {
+  const { W, H, sky, wx, disp, hue, kickFlash, tn, dt, parX, parY, waves, makeLayer } = S;
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, horizon); ctx.clip();
+  const rSun = Math.min(W, H) * (.075 + disp.sub * .05 + kickFlash * .02) * (.8 + hash(sky.n + .3) * .5), rMoon = Math.min(W, H) * (.05 + disp.sub * .012) * (.75 + hash(sky.n + .7) * .7);
+  const bodies = [];
+  if (sky.moon.up) bodies.push({ kind: 'moon', n: sky.n, alt: sky.moon.alt, x: sky.moon.x * W - parX * W * .02, y: horizon - sky.moon.alt * H + parY * H * .015, r: rMoon });
+  if (sky.sun.up) bodies.push({ kind: 'sun', n: sky.n, alt: sky.sun.alt, x: sky.sun.x * W - parX * W * .03, y: horizon - sky.sun.alt * H + parY * H * .02, r: rSun });
+  for (const bd of bodies) drawBody(ctx, bd, sky, disp.sub, wx, hue, tn, makeLayer);
+  const src = bodies[0], srcVis = src ? bodyVisibility(src, horizon) : 0;
+  if (src) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = waves.length - 1; i >= 0; i--) { const w = waves[i]; w.r += dt * W * .9; w.a *= Math.exp(-dt * 2.4); if (w.a < .02) { waves.splice(i, 1); continue; } ctx.strokeStyle = hsl(hue, 'sub', 85, 70, w.a * srcVis * (src.kind === 'sun' ? 1 : .5)); ctx.lineWidth = 2 + 6 * w.a; ctx.beginPath(); ctx.arc(src.x, src.y, src.r + w.r, 0, TAU); ctx.stroke(); }
+  } else waves.length = 0;
+  ctx.restore(); ctx.globalCompositeOperation = 'source-over';
+  return { src, srcVis, rSun };
+}
+
+// Traits de lumière qui filent avec le niveau
+function drawStreaks(ctx, S, horizon) {
+  const { W, sky, disp, hue, lvl, dt, parY, streaks, rng } = S;
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of streaks) { const e = disp[s.band]; s.x -= dt * s.v * (.04 + lvl * .25 + e * .3); if (s.x < -.1) { s.x = 1.1; s.y = .1 + rng() * .7; } const x = s.x * W, y = (s.y - parY * .05 * s.v) * horizon, len = s.len * W * (.5 + lvl + e); ctx.strokeStyle = hsl(hue, s.band, 80, 65, (.35 * e + .06) * (1 - sky.day * .7)); ctx.lineWidth = 1 + e * 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke(); }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// Nuages en sprites, colorés par la lumière du moment
+function drawClouds(ctx, S, horizon) {
+  const { W, sky, wx, hue, dt, wind, parX, parY, clouds, cloudSprites, rng } = S, hb = (HUES.bass + hue) % 360, hs = (HUES.sub + hue) % 360;
+  for (const c of clouds) {
+    c.x -= dt * wind * c.depth; if (c.x < -.3) { c.x = 1.3; c.y = .12 + (1 - c.depth) * .25 + rng() * .15; }
+    const cx = (c.x - parX * .03 * c.depth) * W, cy = (c.y - parY * .02 * c.depth) * horizon, s = c.size * W;
+    const light = { hue: sky.dusk > sky.day ? hs : lerp(hb, 215, sky.day), sat: lerp(25, 12, sky.day) + sky.dusk * 45 - wx.dark * 10, l: lerp(14 + c.depth * 4, 88, sky.day) + sky.dusk * 12 - wx.dark * 30, a: .55 + c.depth * .3 + wx.dark * .2 };
+    drawCloud(ctx, c, cloudSprites.get(c, light, s), cx, cy, s);
+  }
+}
+
+// ---- src/scenes/horizon.js
+
+// Scène « Horizon » : montagnes au bord de l'eau, reflets ondulés, passages du ciel et de l'eau
+const horizonGeometry = H => ({ horizon: H * .74, wTop: H * .74 + H * .06 });
+
+function renderHorizon(ctx, S, D) {
+  const { W, H, t, sky, wx, events } = S, g = horizonGeometry(H), horizon = g.horizon, wTop = g.wTop, scene = { ...S, horizon, wTop };
+  D.drawSky(ctx, S, horizon);
+  const { src, srcVis } = D.drawBodies(ctx, S, horizon);
+  if (wx.rainbow > 0 && sky.day > .3 && src && src.kind === 'sun') D.drawRainbow(ctx, wx.rainbow * sky.day, src.x, horizon, W, H);
+  D.drawStreaks(ctx, S, horizon);
+  for (const e of events) if (BEHIND_CLOUDS.includes(e.type)) D.drawEvent(ctx, e, scene, sky);
+  D.drawClouds(ctx, S, horizon);
+  for (const e of events) if (!WATER_TYPES.includes(e.type) && !BEHIND_CLOUDS.includes(e.type)) D.drawEvent(ctx, e, scene, sky);
+  S.layers.forEach((L, i) => { D.drawLayer(ctx, L, t, scene, sky, i); if (i === 1 && wx.w === 'fog') D.drawFog(ctx, wx.k, horizon, W, H); });
+  if (wx.w === 'rain' || wx.w === 'storm') D.drawRain(ctx, t, wx.k, S.wind, wx.w === 'storm', W, H);
+  if (wx.w === 'snow') D.drawSnow(ctx, t, wx.k, W, H);
+  D.drawWater(ctx, S, horizon, wTop, src, srcVis);
+  for (const e of events) if (WATER_TYPES.includes(e.type)) D.drawEvent(ctx, e, scene, sky);
+  return { src, srcVis, horizon, wTop, layerGeom: i => ({ y0: horizon + H * .02 * i, amp: H * S.layers[i].h * (.85 + S.disp[S.layers[i].band] * .15) }) };
+}
+
+// ---- src/scenes/valley.js
+
+
+
+
+// Scène « Vallée » : montagnes hautes, fond de vallée, végétation au premier plan, biomes qui alternent. Pas d'eau.
+const valleyGeometry = H => ({ horizon: H * .58, floor: H * .84 });
+const bcol = (c, dl = 0, a = 1) => `hsla(${c.h},${c.s}%,${clamp(c.l + dl, 0, 100)}%,${a})`;
+
+// Végétation au premier plan : silhouettes posées le long de l'axe du temps du plan proche, elles défilent avec lui
+function drawVegetation(ctx, S, pal, floor) {
+  const { W, H, t } = S, win = 45, t0 = t - win / 2, spacing = 2.6;
+  const first = Math.floor(t0 / spacing), last = Math.ceil((t0 + win) / spacing);
+  for (let k = first; k <= last; k++) {
+    const jitter = hash(k * 1.7) * spacing * .8, tt = k * spacing + jitter, x = (tt - t0) / win * W;
+    if (x < -W * .05 || x > W * 1.05) continue;
+    const size = H * (.035 + hash(k + .5) * .035), y = floor + H * .01 + hash(k + .9) * H * .04, kind = pal.veg, dark = bcol(pal.floor, -22);
+    if (kind === 'pine' || kind === 'fir') {
+      const green = kind === 'fir' ? { h: 160, s: 25, l: 28 } : { h: 125, s: 40, l: 24 };
+      ctx.fillStyle = bcol(green, -(y - floor) / H * 60);
+      for (let s = 0; s < 3; s++) { const w = size * (.9 - s * .22), yy = y - size * s * .45; ctx.beginPath(); ctx.moveTo(x, yy - size * .8); ctx.lineTo(x + w * .5, yy); ctx.lineTo(x - w * .5, yy); ctx.closePath(); ctx.fill(); }
+      if (kind === 'fir') { ctx.fillStyle = 'rgba(245,248,255,.85)'; for (let s = 0; s < 3; s++) { const w = size * (.9 - s * .22), yy = y - size * s * .45; ctx.beginPath(); ctx.moveTo(x, yy - size * .8); ctx.lineTo(x + w * .3, yy - size * .32); ctx.lineTo(x - w * .3, yy - size * .32); ctx.closePath(); ctx.fill(); } }
+      ctx.fillStyle = dark; ctx.fillRect(x - size * .06, y, size * .12, size * .22);
+    } else {
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = bcol({ h: 118, s: 32, l: 34 }); ctx.lineWidth = size * .22;
+      ctx.beginPath(); ctx.moveTo(x, y + size * .1); ctx.lineTo(x, y - size); ctx.stroke();                                       // tronc
+      if (hash(k + .3) > .3) { ctx.beginPath(); ctx.moveTo(x - size * .1, y - size * .45); ctx.lineTo(x - size * .38, y - size * .45); ctx.lineTo(x - size * .38, y - size * .8); ctx.stroke(); }
+      if (hash(k + .6) > .3) { ctx.beginPath(); ctx.moveTo(x + size * .1, y - size * .6); ctx.lineTo(x + size * .36, y - size * .6); ctx.lineTo(x + size * .36, y - size * .9); ctx.stroke(); }
+      if (hash(k + .8) > .6) { ctx.fillStyle = bcol(pal.floor, -25); ctx.beginPath(); ctx.ellipse(x + size * .7, y + size * .05, size * .35, size * .14, 0, 0, TAU); ctx.fill(); }   // rocher
+    }
+  }
+}
+
+// Fond de vallée : sol du biome avec bandes de relief, et une piste qui serpente au rythme du plan proche
+function drawFloor(ctx, S, pal, floor) {
+  const { W, H, t } = S;
+  ctx.fillStyle = bcol(pal.floor); ctx.fillRect(0, floor, W, H - floor);
+  ctx.fillStyle = bcol(pal.floor, -6, .9); ctx.fillRect(0, floor, W, H * .012);
+  for (let i = 0; i < 5; i++) { ctx.fillStyle = bcol(pal.floor, -4 - i * 3, .35); const y = floor + H * (.03 + i * .035); ctx.beginPath(); for (let x = 0; x <= W; x += 6) { const tt = t - 22 + x / W * 45; ctx.lineTo(x, y + Math.sin(tt * .9 + i) * H * .006); } ctx.lineTo(W, y + H * .02); ctx.lineTo(0, y + H * .02); ctx.closePath(); ctx.fill(); }
+  if (pal.snowline > 0) { ctx.fillStyle = `rgba(255,255,255,${.35 * pal.snowline})`; for (let i = 0; i < 40; i++) { const x = ((hash(i + 3) + (t * .002)) % 1) * W, y = floor + hash(i + 7) * (H - floor); ctx.beginPath(); ctx.ellipse(x, y, H * .012, H * .004, 0, 0, TAU); ctx.fill(); } }
+}
+
+// Neige sur les crêtes des plans, dans le biome enneigé et en transition
+function drawSnowCaps(ctx, S, L, i, y0, amp, snowline) {
+  if (snowline <= 0) return;
+  const { W, t } = S, t0 = t - L.win / 2, px = W / 2 - S.parX * W * (.01 + i / 3 * .05);
+  ctx.fillStyle = `rgba(250,252,255,${.85 * snowline})`; ctx.beginPath(); let started = false;
+  for (let x = 0; x <= W; x += 3) { const v = layerValue(L, t0 + (x - px) / W * L.win); const yy = y0 - v * amp; if (!started) { ctx.moveTo(x, yy); started = true; } else ctx.lineTo(x, yy); }
+  for (let x = W; x >= 0; x -= 3) { const v = layerValue(L, t0 + (x - px) / W * L.win); ctx.lineTo(x, y0 - Math.max(0, v - .18 * snowline) * amp); }
+  ctx.closePath(); ctx.fill();
+}
+
+function renderValley(ctx, S, D) {
+  const { W, H, t, sky, wx, disp, layers, events } = S, g = valleyGeometry(H), horizon = g.horizon, floor = g.floor;
+  const pal = biomePalette(biomeAt(t));
+  // Ciel du biome : la teinte du haut et du bas remplace celle de l'horizon, le jour ; la nuit garde le ciel commun
+  D.drawSky(ctx, S, horizon, { top: bcol(pal.sky.top), bottom: bcol(pal.sky.bottom), floorTo: floor });
+  const { src, srcVis } = D.drawBodies(ctx, S, horizon);
+  D.drawStreaks(ctx, S, horizon);
+  for (const e of events) if (BEHIND_CLOUDS.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon, wTop: floor }, sky);
+  D.drawClouds(ctx, S, horizon);
+  if (wx.rainbow > 0 && sky.day > .3 && src && src.kind === 'sun') D.drawRainbow(ctx, wx.rainbow * sky.day, src.x, horizon, W, H);
+  for (const e of events) if (!WATER_TYPES.includes(e.type) && !BEHIND_CLOUDS.includes(e.type)) D.drawEvent(ctx, e, { ...S, horizon, wTop: floor }, sky);
+  // Brume lointaine : entre le ciel et le pied des premiers plans, pour ne pas laisser une bande plate qui ressemble à un lac
+  const geom = i => ({ y0: horizon + (floor - horizon) * (.25 + i * .25), amp: H * layers[i].h * 1.35 * (.85 + disp[layers[i].band] * .15) });
+  { const far = pal.layers[0], night = 1 - sky.day, hz = ctx.createLinearGradient(0, horizon - H * .02, 0, geom(0).y0 + 1);
+    hz.addColorStop(0, bcol(pal.sky.bottom, -night * 40, 0)); hz.addColorStop(1, bcol(far, 14 - night * 26, .95)); ctx.fillStyle = hz; ctx.fillRect(0, horizon - H * .02, W, geom(0).y0 - horizon + H * .03); }
+  // Plans : plus hauts que sur l'horizon, colorés par le biome, neige sur les crêtes
+  layers.forEach((L, i) => {
+    const c = pal.layers[Math.min(i, pal.layers.length - 1)], { y0, amp } = geom(i);
+    D.drawLayer(ctx, L, t, { ...S, horizon, wTop: floor }, sky, i, { y0, amp, colors: c });
+    drawSnowCaps(ctx, S, L, i, y0, amp, pal.snowline * (.4 + i * .2));
+    if (i === 1 && wx.w === 'fog') D.drawFog(ctx, wx.k, floor, W, H);
+  });
+  drawFloor(ctx, S, pal, floor);
+  drawVegetation(ctx, S, pal, floor);
+  if (wx.w === 'rain' || wx.w === 'storm') D.drawRain(ctx, t, wx.k, S.wind, wx.w === 'storm', W, H);
+  if (wx.w === 'snow' || pal.snowline > .5 && wx.w === 'cloudy') D.drawSnow(ctx, t, wx.w === 'snow' ? wx.k : .4 * wx.k, W, H);
+  return { src, srcVis, horizon, floor, wTop: floor, layerGeom: geom };
 }
 
 // ---- src/main.js
@@ -2600,7 +2840,9 @@ class ControlsBar {
 
 
 
-// Câblage de la page : audio, analyse, boucle de rendu, interactions, console
+
+
+// Câblage de la page : audio, analyse, boucle de rendu, scènes, interactions, panneaux
 defineControls();   // Web Components de potard
 const DATA = JSON.parse(document.getElementById('data').textContent);
 const SET = new Analysis(DATA), LIVE = new LiveAnalysis(.5); let A = SET;   // A : analyse de la piste courante
@@ -2608,6 +2850,7 @@ const dur = () => (isFinite(audio.duration) && audio.duration > 0) ? audio.durat
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const now = () => performance.now() / 1000;
 const rng = Math.random;
+const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* stockage indisponible */ } } };
 
 // --- audio et analyse temps réel
 const audio = document.getElementById('audio');
@@ -2625,6 +2868,7 @@ function startAnalyser() {
     freq = new Float32Array(analyser.frequencyBinCount); silentSince = now();
   } catch (e) { actx = null; }
 }
+const liveWave = new RingWaveSource(900, 30), timeBuf = new Float32Array(2048);
 function analyse() {
   if (!analyser) return null;
   analyser.getFloatFrequencyData(freq);
@@ -2638,7 +2882,7 @@ function analyse() {
   }
   let e = 0, tot = 0; for (let i = Math.floor(30 / res); i < Math.ceil(150 / res); i++) if (Number.isFinite(freq[i])) e += Math.pow(10, freq[i] / 10);
   for (let i = Math.floor(40 / res); i < Math.min(freq.length, Math.ceil(12000 / res)); i++) if (Number.isFinite(freq[i])) tot += Math.pow(10, freq[i] / 10);
-  out.kickE = e; out.loud = tot > 0 ? 10 * Math.log10(tot) : -90;   // loudness approchée, en dB relatifs
+  out.kickE = e; out.loud = tot > 0 ? 10 * Math.log10(tot) : -90;
   if (finite) {
     silentSince = now(); let lo = 40;
     analyser.getFloatTimeDomainData(timeBuf); liveWave.push(timeBuf);
@@ -2649,14 +2893,11 @@ function analyse() {
   return live ? out : null;
 }
 const kickDet = new KickDetector(); let dataKick = new DataKick(A);
-// Forme d'onde du premier plan : signal en direct quand la page y a accès, enveloppe précalculée sinon
-const liveWave = new RingWaveSource(900, 30), timeBuf = new Float32Array(2048);
 const waveStrip = new WaveformStrip(liveWave, new EnvelopeWaveSource(A, 3), 240);
 
 // --- rendu : 30 images/s maxi, résolution plafonnée et adaptée à la machine
 const cv = document.getElementById('c'), ctx = cv.getContext('2d', { alpha: false, desynchronized: true });
 const back = document.createElement('canvas'), bctx = back.getContext('2d');
-// Calque transparent réutilisé pour la lune : sa partie dans l'ombre y est effacée avant report sur la scène
 const moonLayer = document.createElement('canvas');
 const makeLayer = (w, h) => { if (moonLayer.width !== w || moonLayer.height !== h) { moonLayer.width = w; moonLayer.height = h; } const c = moonLayer.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.clearRect(0, 0, w, h); return { canvas: moonLayer, ctx: c }; };
 let W = 0, H = 0, Q = 1, lastDraw = 0, workAcc = 0, workN = 0, workT0 = now(), calmSince = now();
@@ -2682,130 +2923,108 @@ let hue = 0, hueTarget = 0, kickFlash = 0, jumpFlash = 0, lastT = now(), started
 const disp = { sub: 0, bass: 0, mid: 0, high: 0 };
 const follow = (c, tgt, up, down) => c + (tgt - c) * (tgt > c ? up : down);
 const waves = [], events = [], lightning = new Lightning();
-let curW = { w: 'clear', k: 0, dark: 0, rainbow: 0 }, curSky = skyState(0), curSrc = null;
+let curW = { w: 'clear', k: 0, dark: 0, rainbow: 0 };
 let layers = makeLayers(A.S, A.step), layersN = A.S.length;
 const stars = Array.from({ length: 110 }, () => ({ x: rng(), y: rng() * .6, s: .5 + rng() * rng() * 2.2, p: rng() * TAU, col: rng() < .12 ? '190,210,255' : rng() < .2 ? '255,225,190' : '234,231,221' }));
 const streaks = Array.from({ length: 36 }, () => ({ x: rng(), y: .1 + rng() * .7, v: .3 + rng() * .7, len: .02 + rng() * .06, band: BANDS[1 + Math.floor(rng() * 3)] }));
 const clouds = Array.from({ length: 9 }, () => makeCloud(rng)).sort((a, b) => a.depth - b.depth);
 const cloudSprites = new CloudSprites((w, h) => { const cv2 = document.createElement('canvas'); cv2.width = w; cv2.height = h; return { canvas: cv2, ctx: cv2.getContext('2d') }; });
 let mouseX = .5, mouseY = .5;
-const geo = { horizon: 0, wTop: 0, parX: 0 };
+const geo = { horizon: 0, wTop: 0, parX: 0, layerGeom: null };
 addEventListener('mousemove', e => { mouseX = e.clientX / innerWidth; mouseY = e.clientY / innerHeight; idleT = now(); }, { passive: true });
 function onKick(k, horizon) { stats.kicks++; kickFlash = Math.max(kickFlash, k); hueTarget += 15 + 30 * k * (rng() < .5 ? 1 : -1); waves.push({ r: 0, a: .7 * k }); if (curW.w === 'storm' && curW.k > .3 && k > .4 && now() - lightning.t > 1.5) lightning.strike(W, horizon, rng, now()); }
+
+// --- scènes : même moteur, compositions différentes ; changement à la main ou à chaque nouveau morceau
+let sceneId = sceneById(store.get('horizon.scene', 'horizon')).id, autoScene = store.get('horizon.autoScene', true);
+function setScene(id, silent) {
+  sceneId = sceneById(id).id; store.set('horizon.scene', sceneId);
+  const ok = allowedTypes(sceneId); for (let i = events.length - 1; i >= 0; i--) if (!ok.includes(events[i].type)) events.splice(i, 1);
+  syncSceneUi(); if (!silent) plPanel.announce({ name: `Scène : ${sceneById(sceneId).name}` });
+}
+function syncSceneUi() { const sel = document.getElementById('sceneSel'); if (sel) sel.value = sceneId; const auto = document.getElementById('autoScene'); if (auto) auto.checked = autoScene; if (typeof controls !== 'undefined' && controls) controls.setScene(sceneById(sceneId).name); }
+const RENDER = { horizon: renderHorizon, valley: renderValley };
+// Dessins fournis aux scènes
+const D = {
+  drawSky, drawBodies, drawStreaks, drawClouds, drawEvent, drawLayer, drawRain, drawSnow, drawFog, drawAurora, drawRainbow,
+  drawWater: (c, S, horizon, wTop, src, srcVis) => drawWater(c, back, bctx, cv, { W: S.W, H: S.H, horizon, wTop, tn: S.tn, sky: S.sky, wx: S.wx, lvl: S.lvl, bass: S.disp.bass, hs: S.hs, hb: S.hb, src, srcVis, reduced: REDUCED }),
+};
 
 function frame() {
   const tn = now(); if (tn - lastDraw < 1 / FPS_CAP - .003) { requestAnimationFrame(frame); return; } lastDraw = tn;
   const w0 = performance.now(), dt = Math.min(.1, tn - lastT); lastT = tn;
   const t = audio.currentTime || 0, playing = started && !audio.paused;
-  const horizon = H * .74, parX = mouseX - .5, parY = mouseY - .5, wTop = horizon + H * .06;
+  const parX = mouseX - .5, parY = mouseY - .5;
   let b = playing ? analyse() : null, kick = 0;
   if (b) { kick = kickDet.feed(b.kickE, tn); if (A === LIVE) { LIVE.feed(t, { loud: b.loud, peak: b.peak, sub: b.sub, bass: b.bass, mid: b.mid, high: b.high }); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } } }
   else { b = playing ? A.bandsAt(t) : { sub: 0, bass: 0, mid: 0, high: 0 }; if (playing) kick = dataKick.at(t); if (!live) for (let i = 0; i < NSPEC; i++) { const x = i / (NSPEC - 1) * 3, k = Math.floor(x), f = x - k, a0 = b[BANDS[Math.min(3, k)]], a1 = b[BANDS[Math.min(3, k + 1)]]; spec[i] = (a0 + (a1 - a0) * f) * (.6 + .4 * Math.sin(tn * 2.3 + i * .55)); } }
-  if (kick) onKick(kick, horizon);
   for (const k of BANDS) disp[k] = follow(disp[k], b[k], .5, .07);
   if (tn - lastBandSample > .25) { lastBandSample = tn; stats.bandHist.push([disp.sub, disp.bass, disp.mid, disp.high]); if (stats.bandHist.length > 240) stats.bandHist.shift(); }
   hue += (hueTarget - hue) * .05 + dt * 3; hueTarget += dt * 3;
   kickFlash *= Math.exp(-dt * 8); jumpFlash *= Math.exp(-dt * 4);
-  const lvl = playing ? A.levelAt(t) : .3;
-  const sky = skyState(t), wx = weatherAt(t); curW = wx; curSky = sky; geo.horizon = horizon; geo.parX = parX; geo.wTop = wTop;
+  const lvl = playing ? A.levelAt(t) : .3, sky = skyState(t), wx = weatherAt(t); curW = wx;
   const wind = REDUCED ? 0 : (.004 + lvl * .012) * (wx.w === 'storm' ? 2.5 : wx.w === 'rain' ? 1.6 : 1);
-  if (playing) { const before = events.length; tickEvents(events, dt, sky, wind, wx, rng, tn); for (const e of events.slice(before)) stats.spawned[e.type] = (stats.spawned[e.type] || 0) + 1; }
-  if (wx.w === 'storm' && wx.k > .3 && playing && rng() < dt / 7) lightning.strike(W, horizon, rng, tn);
-  const hb = (HUES.bass + hue) % 360, hs = (HUES.sub + hue) % 360, scene = { W, H, horizon, wTop, tn, hue, disp, parX };
+  const S = { W, H, t, tn, dt, sky, wx, disp, lvl, hue, hb: (158 + hue) % 360, hs: (18 + hue) % 360, layers, events, parX, parY, wind, kickFlash, waves, stars, streaks, clouds, cloudSprites, rng, makeLayer, reduced: REDUCED };
+  if (kick) onKick(kick, geo.horizon || H * .7);
+  if (playing) { const before = events.length; tickEvents(events, dt, sky, wind, wx, rng, tn, allowedTypes(sceneId)); for (const e of events.slice(before)) stats.spawned[e.type] = (stats.spawned[e.type] || 0) + 1; }
+  if (wx.w === 'storm' && wx.k > .3 && playing && rng() < dt / 7) lightning.strike(W, geo.horizon || H * .7, rng, tn);
 
-  // Ciel : nuit profonde, jour bleu, crépuscule chaud, assombri par la météo
-  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
-  const g = ctx.createLinearGradient(0, 0, 0, horizon);
-  g.addColorStop(0, `hsl(${lerp(hb, 215, sky.day)},${lerp(40, 55, sky.day)}%,${lerp(4 + lvl * 3, 52, sky.day)}%)`);
-  g.addColorStop(.7, `hsl(${lerp(hs, 208, sky.day)},${lerp(45, 50, sky.day)}%,${lerp(9 + lvl * 6, 66, sky.day)}%)`);
-  g.addColorStop(1, `hsl(${lerp(hs, 200, sky.day)},${lerp(60, 45, sky.day)}%,${lerp(16 + lvl * 10 + kickFlash * 20, 78, sky.day)}%)`);
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, wTop); // jusqu'au bord de l'eau : la bande du rivage garde la couleur du ciel quand les plans sont muets
-  if (sky.dusk > .02) { const d = ctx.createLinearGradient(0, horizon * .45, 0, horizon); d.addColorStop(0, hsl(hue, 'sub', 85, 50, 0)); d.addColorStop(1, hsl(hue, 'sub', 85, 50, sky.dusk * .55)); ctx.fillStyle = d; ctx.fillRect(0, 0, W, horizon); }
-  if (wx.dark > 0) { ctx.fillStyle = `rgba(8,10,18,${wx.dark * .5})`; ctx.fillRect(0, 0, W, horizon); }
-  const starA = (1 - sky.day) * (1 - wx.dark), starShift = (t / 3600) % 1;
-  if (starA > .02) for (const s of stars) { const x = (((s.x - starShift * .5 - parX * .02) % 1) + 1) % 1 * W, y = (s.y - parY * .02) * horizon, tw = .5 + .5 * Math.sin(tn * 2 + s.p); ctx.fillStyle = `rgba(${s.col},${(.25 + tw * .35 + disp.high * .3) * starA})`; ctx.fillRect(x, y, s.s, s.s); }
-  if (wx.w === 'aurora' && starA > .4) drawAurora(ctx, tn, wx.k * starA, horizon, W, hue, disp.mid);
-  // Astres : un seul à la fois, découpés au-dessus de l'horizon ; ondes des coups depuis l'astre visible
-  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, horizon); ctx.clip();
-  const rSun = Math.min(W, H) * (.075 + disp.sub * .05 + kickFlash * .02) * (.8 + hash(sky.n + .3) * .5), rMoon = Math.min(W, H) * (.05 + disp.sub * .012) * (.75 + hash(sky.n + .7) * .7);
-  const bodies = [];
-  if (sky.moon.up) bodies.push({ kind: 'moon', n: sky.n, alt: sky.moon.alt, x: sky.moon.x * W - parX * W * .02, y: horizon - sky.moon.alt * H + parY * H * .015, r: rMoon });
-  if (sky.sun.up) bodies.push({ kind: 'sun', n: sky.n, alt: sky.sun.alt, x: sky.sun.x * W - parX * W * .03, y: horizon - sky.sun.alt * H + parY * H * .02, r: rSun });
-  for (const bd of bodies) drawBody(ctx, bd, sky, disp.sub, wx, hue, tn, makeLayer);
-  const src = bodies[0]; curSrc = src; const srcVis = src ? bodyVisibility(src, horizon) : 0;
-  if (src) { ctx.globalCompositeOperation = 'lighter'; for (let i = waves.length - 1; i >= 0; i--) { const w = waves[i]; w.r += dt * W * .9; w.a *= Math.exp(-dt * 2.4); if (w.a < .02) { waves.splice(i, 1); continue; } ctx.strokeStyle = hsl(hue, 'sub', 85, 70, w.a * srcVis * (src.kind === 'sun' ? 1 : .5)); ctx.lineWidth = 2 + 6 * w.a; ctx.beginPath(); ctx.arc(src.x, src.y, src.r + w.r, 0, TAU); ctx.stroke(); } } else waves.length = 0;
-  ctx.restore();
-  if (wx.rainbow > 0 && sky.day > .3 && src && src.kind === 'sun') drawRainbow(ctx, wx.rainbow * sky.day, src.x, horizon, W, H);
-  ctx.globalCompositeOperation = 'lighter';
-  for (const s of streaks) { const e = disp[s.band]; s.x -= dt * s.v * (.04 + lvl * .25 + e * .3); if (s.x < -.1) { s.x = 1.1; s.y = .1 + rng() * .7; } const x = s.x * W, y = (s.y - parY * .05 * s.v) * horizon, len = s.len * W * (.5 + lvl + e); ctx.strokeStyle = hsl(hue, s.band, 80, 65, (.35 * e + .06) * (1 - sky.day * .7)); ctx.lineWidth = 1 + e * 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke(); }
-  ctx.globalCompositeOperation = 'source-over';
-  for (const e of events) if (BEHIND_CLOUDS.includes(e.type)) drawEvent(ctx, e, scene, sky);   // ciel profond, derrière les nuages
-  // Nuages, colorés par la lumière du moment
-  for (const c of clouds) {
-    c.x -= dt * wind * c.depth; if (c.x < -.3) { c.x = 1.3; c.y = .12 + (1 - c.depth) * .25 + rng() * .15; }
-    const cx = (c.x - parX * .03 * c.depth) * W, cy = (c.y - parY * .02 * c.depth) * horizon, s = c.size * W;
-    const light = { hue: sky.dusk > sky.day ? hs : lerp(hb, 215, sky.day), sat: lerp(25, 12, sky.day) + sky.dusk * 45 - wx.dark * 10, l: lerp(14 + c.depth * 4, 88, sky.day) + sky.dusk * 12 - wx.dark * 30, a: .55 + c.depth * .3 + wx.dark * .2 };
-    drawCloud(ctx, c, cloudSprites.get(c, light, s), cx, cy, s);
-  }
-  for (const e of events) if (!WATER_TYPES.includes(e.type) && !BEHIND_CLOUDS.includes(e.type)) drawEvent(ctx, e, scene, sky);
-  // Plans du paysage, brume, précipitations
-  layers.forEach((L, i) => { drawLayer(ctx, L, t, scene, sky, i); if (i === 1 && wx.w === 'fog') drawFog(ctx, wx.k, horizon, W, H); });
-  if (wx.w === 'rain' || wx.w === 'storm') drawRain(ctx, t, wx.k, wind, wx.w === 'storm', W, H);
-  if (wx.w === 'snow') drawSnow(ctx, t, wx.k, W, H);
-  drawWater(ctx, back, bctx, cv, { W, H, horizon, wTop, tn, sky, wx, lvl, bass: disp.bass, hs, hb, src, srcVis, reduced: REDUCED });
-  for (const e of events) if (WATER_TYPES.includes(e.type)) drawEvent(ctx, e, scene, sky);
-  if (started) waveStrip.render(ctx, { x: 0, y: wTop + H * .012, w: W, h: H * .06 }, t, hue);
-  // Flashs, foudre, vignettage, indication de démarrage
+  const R = (RENDER[sceneId] || renderHorizon)(ctx, S, D);
+  geo.horizon = R.horizon; geo.wTop = R.wTop; geo.parX = parX; geo.layerGeom = R.layerGeom;
+  if (started) waveStrip.render(ctx, { x: 0, y: R.wTop + H * .012, w: W, h: H * .06 }, t, hue);
+  // Flashs, foudre, vignettage, timecode
   if (jumpFlash > .02) { ctx.fillStyle = `rgba(234,231,221,${jumpFlash * .1})`; ctx.fillRect(0, 0, W, H); }
   lightning.draw(ctx, tn, W, H);
   if (kickFlash > .02) { ctx.fillStyle = `rgba(255,240,220,${kickFlash * .08})`; ctx.fillRect(0, 0, W, H); }
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, Math.hypot(W, H) / 2); vg.addColorStop(0, 'rgba(6,7,12,0)'); vg.addColorStop(1, `rgba(6,7,12,${lerp(.6, .35, sky.day)})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-  if (!started) { const p = .5 + .5 * Math.sin(tn * 1.2); ctx.strokeStyle = `rgba(234,231,221,${.25 + p * .4})`; ctx.lineWidth = 2; ctx.beginPath(); if (src && srcVis > .5) ctx.arc(src.x, src.y, src.r * 1.6 + p * 4, 0, TAU); else ctx.arc(W / 2, H / 2, 5 + p * 5, 0, TAU); ctx.stroke(); }
+  if (!started) { const p = .5 + .5 * Math.sin(tn * 1.2); ctx.strokeStyle = `rgba(234,231,221,${.25 + p * .4})`; ctx.lineWidth = 2; ctx.beginPath(); if (R.src && R.srcVis > .5) ctx.arc(R.src.x, R.src.y, R.src.r * 1.6 + p * 4, 0, TAU); else ctx.arc(W / 2, H / 2, 5 + p * 5, 0, TAU); ctx.stroke(); }
   if (A === LIVE && playing && tn - lastSave > 15) saveCache(false);
   if (!controls.hidden) controls.tick();
   if (started && konsole.hidden && controls.hidden) drawHud(ctx, t, dur(), { W, H }, .5);
   if (!plPanel.hidden && (stats.frames % 15 === 0)) plPanel.el.style.setProperty('--accent', hsl(hue, 'sub', 85, 60));
   document.body.classList.toggle('hidecursor', playing && tn - idleT > 2 && konsole.hidden && plPanel.hidden && controls.hidden);
   adapt(performance.now() - w0);
-  if (!konsole.hidden && tn - konsole.last > .25) { konsole.last = tn; konsole.render({ t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap: FPS_CAP, track: playlist.current && playlist.current.name, dur: dur() }); }
+  if (!konsole.hidden && tn - konsole.last > .25) { konsole.last = tn; konsole.render({ t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap: FPS_CAP, track: playlist.current && playlist.current.name, dur: dur(), scene: sceneById(sceneId).name }); }
   requestAnimationFrame(frame);
 }
 
-// --- console et interactions
+// --- console, playlist, cache, contrôles
 const konsole = new Console(document, () => A, stats, {});
-// --- playlist : le set en tête, les pistes distantes retenues d'une visite à l'autre
+document.getElementById('closeBtn').addEventListener('click', e => { e.stopPropagation(); konsole.toggle(false); });
+konsole.el.addEventListener('click', e => e.stopPropagation()); konsole.el.addEventListener('dblclick', e => e.stopPropagation());
 const playlist = new Playlist();
 playlist.add({ name: trackName(audio.getAttribute('src')), src: audio.getAttribute('src'), isSet: true });
-try { playlist.load(JSON.parse(localStorage.getItem('horizon.playlist') || '[]')); } catch (e) { /* stockage indisponible : la liste reste en mémoire */ }
-const savePl = () => { try { localStorage.setItem('horizon.playlist', JSON.stringify(playlist.toJSON())); } catch (e) { /* idem */ } };
+playlist.load(store.get('horizon.playlist', []));
+const savePl = () => store.set('horizon.playlist', playlist.toJSON());
+const cache = new AnalysisCache(localStorage); let cacheK = null, lastSave = 0;
+function loadCache() { const tr = playlist.current; if (!tr || tr.isSet || A !== LIVE || !isFinite(audio.duration)) return; cacheK = cacheKey(tr, audio.duration); const data = cache.load(cacheK); if (data) { LIVE.load(data); layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }
+function saveCache(complete) { if (A !== LIVE || !cacheK || LIVE.S.length < 4) return; cache.save(cacheK, LIVE, complete || (LIVE.duration >= audio.duration - 1)); lastSave = now(); }
+audio.addEventListener('loadedmetadata', loadCache);
+audio.addEventListener('pause', () => saveCache(false));
 function playTrack(track, retryWithoutCors) {
   if (!track) return;
   saveCache(false); cacheK = null;
   A = track.isSet ? SET : LIVE; if (!track.isSet) LIVE.reset();
   layers = makeLayers(A.S, A.step); layersN = A.S.length; dataKick = new DataKick(A); waveStrip.env = new EnvelopeWaveSource(A, 3); liveWave.reset(); events.length = 0;
   const remote = /^https?:/i.test(track.src);
-  if (remote && !retryWithoutCors) audio.crossOrigin = 'anonymous'; else audio.removeAttribute('crossorigin');   // l'analyse exige CORS ; sinon on lit sans analyser
+  if (remote && !retryWithoutCors) audio.crossOrigin = 'anonymous'; else audio.removeAttribute('crossorigin');
   audioFailed = false; audio.src = track.src; started = true; audio.play().then(startAnalyser).catch(() => {});
-  plPanel.refresh(); plPanel.announce(track);
+  if (autoScene && !retryWithoutCors) setScene(nextSceneId(sceneId), true);   // nouvelle piste, nouvelle scène
+  plPanel.refresh(); plPanel.announce({ name: `${track.name} · ${sceneById(sceneId).name}` });
 }
 audio.addEventListener('error', () => { const tr = playlist.current; if (tr && audio.getAttribute('crossorigin') && /^https?:/i.test(tr.src)) { playTrack(tr, true); return; } audioFailed = true; });
 audio.addEventListener('ended', () => { saveCache(true); const nx = playlist.next(); if (nx) playTrack(nx); });
-// Cache des analyses construites en direct : une piste déjà entendue retrouve son paysage
-const cache = new AnalysisCache(localStorage); let cacheK = null, lastSave = 0;
-function loadCache() { const tr = playlist.current; if (!tr || tr.isSet || A !== LIVE || !isFinite(audio.duration)) return; cacheK = cacheKey(tr, audio.duration); const data = cache.load(cacheK); if (data) { LIVE.load(data); layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }
-function saveCache(complete) { if (A !== LIVE || !cacheK || LIVE.S.length < 4) return; cache.save(cacheK, LIVE, complete || (LIVE.duration >= audio.duration - 1)); lastSave = now(); }
-audio.addEventListener('loadedmetadata', loadCache);
-audio.addEventListener('pause', () => saveCache(false));
 const plPanel = new PlaylistPanel(document, playlist, { onPlay: tr => playTrack(tr), onChange: savePl, fetchText: async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); return r.text(); }, levels: () => disp, progress: () => (audio.currentTime || 0) / Math.max(1, dur()) });
-document.getElementById('closeBtn').addEventListener('click', e => { e.stopPropagation(); konsole.toggle(false); });
-konsole.el.addEventListener('click', e => e.stopPropagation());
-konsole.el.addEventListener('dblclick', e => e.stopPropagation());
 const controls = new ControlsBar(document, {
   play: () => { if (!started) toggle(); else { audio.play(); if (actx) actx.resume(); } }, pause: () => audio.pause(), isPlaying: () => started && !audio.paused,
   prev: () => playTrack(playlist.prev()), next: () => playTrack(playlist.next()), seek: tt => seekTo(tt), position: () => audio.currentTime || 0, duration: () => dur(), tc,
   volume: v => { audio.volume = clamp(v, 0, 1); }, getVolume: () => audio.volume, level: () => clamp((disp.sub + disp.bass + disp.mid + disp.high) / 3.2, 0, 1), live: () => live,
   togglePlaylist: () => plPanel.toggle(), toggleConsole: () => konsole.toggle(), fullscreen: () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(),
+  scenes: SCENES.map(s => s.name), setScene: name => { const sc = SCENES.find(s => s.name === name); if (sc && sc.id !== sceneId) setScene(sc.id); },
 });
+{ const sel = document.getElementById('sceneSel'), auto = document.getElementById('autoScene');
+  if (sel) { for (const sc of SCENES) { const o = document.createElement('option'); o.value = sc.id; o.textContent = `${sc.name} — ${sc.blurb}`; sel.appendChild(o); } sel.addEventListener('change', () => setScene(sel.value)); }
+  if (auto) auto.addEventListener('change', () => { autoScene = auto.checked; store.set('horizon.autoScene', autoScene); });
+  syncSceneUi(); }
 function toggle() {
   if (audioFailed) { plPanel.toggle(true); return; }
   if (!started) { started = true; audio.play().then(startAnalyser).catch(() => {}); return; }
@@ -2816,15 +3035,16 @@ let clickTimer;
 document.addEventListener('click', e => {
   clearTimeout(clickTimer);
   const xs = e.clientX / innerWidth * W, ys = e.clientY / innerHeight * H;
-  clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp })); }, 220);
+  clickTimer = setTimeout(() => { if (!started || ys > geo.wTop) toggle(); else seekTo(timeAt(layers, xs, ys, audio.currentTime, { W, H, horizon: geo.horizon, parX: geo.parX, disp }, geo.layerGeom)); }, 220);
 });
 document.addEventListener('dblclick', () => { clearTimeout(clickTimer); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); });
 addEventListener('wheel', e => { if (konsole.el.contains(e.target) || plPanel.el.contains(e.target) || controls.el.contains(e.target)) return; e.preventDefault(); if (started) seekTo(audio.currentTime + e.deltaY * (e.shiftKey ? .6 : .06)); }, { passive: false });
 document.addEventListener('keydown', e => {
+  if (e.target && e.target.closest && e.target.closest('#controls, #playlist input, #playlist button, #console select, #console input')) return;
   if (e.key === '?' || (e.key === 'h' && !e.ctrlKey)) { e.preventDefault(); konsole.toggle(); return; }
-  if (e.target && e.target.closest && e.target.closest('#controls, #playlist input, #playlist button')) return;   // les contrôles gardent leur clavier
   if (e.key === 'c') { e.preventDefault(); controls.toggle(); return; }
   if (e.key === 'p') { e.preventDefault(); plPanel.toggle(); return; }
+  if (e.key === 's') { setScene(nextSceneId(sceneId)); return; }
   if (e.key === 'n') { playTrack(playlist.next()); return; }
   if (e.key === 'b') { playTrack(playlist.prev()); return; }
   if (e.key === 'Escape') { konsole.toggle(false); plPanel.toggle(false); controls.toggle(false); return; }
@@ -2840,7 +3060,7 @@ document.addEventListener('keydown', e => {
   idleT = now();
 });
 document.addEventListener('touchstart', () => { idleT = now(); }, { passive: true });
-if (location.search.includes('test')) { window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; }; window.__feedLive = (t, smp) => { LIVE.feed(t, smp); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }; window.__state = () => ({ live: A === LIVE, tracks: playlist.tracks.map(t => t.name), index: playlist.index, src: audio.currentSrc }); }
+if (location.search.includes('test')) { window.__spawn = (type) => { const e = spawn(type, rng, now()); events.push(e); stats.spawned[type] = (stats.spawned[type] || 0) + 1; return e; }; window.__feedLive = (t, smp) => { LIVE.feed(t, smp); if (LIVE.S.length !== layersN) { layers = makeLayers(LIVE.S, LIVE.step); layersN = LIVE.S.length; } }; window.__state = () => ({ live: A === LIVE, tracks: playlist.tracks.map(t => t.name), index: playlist.index, src: audio.currentSrc, scene: sceneId, events: events.map(e => e.type) }); window.__setScene = setScene; }
 requestAnimationFrame(frame);
 
 })();
