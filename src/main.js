@@ -178,6 +178,7 @@ function frame() {
   const vg = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, Math.hypot(W, H) / 2); vg.addColorStop(0, 'rgba(6,7,12,0)'); vg.addColorStop(1, `rgba(6,7,12,${lerp(.6, .35, sky.day)})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   if (!started) { const p = .5 + .5 * Math.sin(tn * 1.2); ctx.strokeStyle = `rgba(234,231,221,${.25 + p * .4})`; ctx.lineWidth = 2; ctx.beginPath(); if (src && srcVis > .5) ctx.arc(src.x, src.y, src.r * 1.6 + p * 4, 0, TAU); else ctx.arc(W / 2, H / 2, 5 + p * 5, 0, TAU); ctx.stroke(); }
   if (started && konsole.hidden) drawHud(ctx, t, dur(), { W, H }, .5);
+  if (!plPanel.hidden && (stats.frames % 15 === 0)) plPanel.el.style.setProperty('--accent', hsl(hue, 'sub', 85, 60));
   document.body.classList.toggle('hidecursor', playing && tn - idleT > 2 && konsole.hidden && plPanel.hidden);
   adapt(performance.now() - w0);
   if (!konsole.hidden && tn - konsole.last > .25) { konsole.last = tn; konsole.render({ t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap: FPS_CAP, track: playlist.current && playlist.current.name, dur: dur() }); }
@@ -198,11 +199,11 @@ function playTrack(track, retryWithoutCors) {
   const remote = /^https?:/i.test(track.src);
   if (remote && !retryWithoutCors) audio.crossOrigin = 'anonymous'; else audio.removeAttribute('crossorigin');   // l'analyse exige CORS ; sinon on lit sans analyser
   audioFailed = false; audio.src = track.src; started = true; audio.play().then(startAnalyser).catch(() => {});
-  plPanel.refresh();
+  plPanel.refresh(); plPanel.announce(track);
 }
 audio.addEventListener('error', () => { const tr = playlist.current; if (tr && audio.getAttribute('crossorigin') && /^https?:/i.test(tr.src)) { playTrack(tr, true); return; } audioFailed = true; });
-audio.addEventListener('ended', () => { if (playlist.length > 1) playTrack(playlist.next()); });
-const plPanel = new PlaylistPanel(document, playlist, { onPlay: tr => playTrack(tr), onChange: savePl, fetchText: async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); return r.text(); } });
+audio.addEventListener('ended', () => { const nx = playlist.next(); if (nx) playTrack(nx); });
+const plPanel = new PlaylistPanel(document, playlist, { onPlay: tr => playTrack(tr), onChange: savePl, fetchText: async u => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); return r.text(); }, levels: () => disp, progress: () => (audio.currentTime || 0) / Math.max(1, dur()) });
 document.getElementById('closeBtn').addEventListener('click', e => { e.stopPropagation(); konsole.toggle(false); });
 konsole.el.addEventListener('click', e => e.stopPropagation());
 konsole.el.addEventListener('dblclick', e => e.stopPropagation());

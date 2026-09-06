@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 1.4.0 — 2026-09-06 · « Embarquement »
+
+- Playlist plus vivante : glisser-déposer de fichiers et de dossiers n'importe où sur la page, avec une zone d'accueil animée ; une icône par piste tirée de son nom ; égaliseur à quatre barres et barre de progression sur la piste en cours ; réordonnancement à la souris ; mélange, boucle, compteur de pistes et de durée ; durées lues depuis les métadonnées ; arrivée des pistes animée ; accent coloré qui suit la teinte du paysage.
+- Toast discret en bas de l'écran à chaque changement de morceau.
+- Sans boucle, la liste s'arrête à la dernière piste.
+- Quatre tests de plus sur la logique de playlist.
+
 ## 1.3.0 — 2026-09-06 · « Playlist »
 
 - Playlist sur la touche <kbd>p</kbd> : ajout de fichiers, d'un dossier local, d'une URL de fichier audio ou d'un dossier servi en HTTP dont l'index est lu. Piste suivante et précédente avec <kbd>n</kbd> et <kbd>b</kbd>, enchaînement automatique, pistes distantes retenues d'une visite à l'autre.

@@ -18,13 +18,35 @@ export function parseDirectoryListing(html, baseUrl) {
   return out;
 }
 
+// Icône par piste, tirée du nom : toujours la même pour le même nom
+const ICONS = ['🐦', '⛵', '🚀', '🛸', '🎈', '🐋', '🪁', '🚁', '🦋', '🐬', '🌙', '☀️'];
+export function iconFor(name) { let h = 0; for (const ch of String(name)) h = (h * 31 + ch.codePointAt(0)) >>> 0; return ICONS[h % ICONS.length]; }
+export function fmtDuration(s) {
+  if (!Number.isFinite(s)) return '';
+  s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+  return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min ${String(sec).padStart(2, '0')}`;
+}
+
 export class Playlist {
-  constructor() { this.tracks = []; this.index = 0; }
+  constructor() { this.tracks = []; this.index = 0; this.loop = true; }
+  totalDuration() { return this.tracks.reduce((a, t) => a + (Number.isFinite(t.duration) ? t.duration : 0), 0); }
+  // Déplace une piste ; le set reste en tête et la piste courante reste la même
+  move(from, to) {
+    if (from === to || from < 0 || to < 0 || from >= this.tracks.length || to >= this.tracks.length) return;
+    if (this.tracks[from].isSet || (to === 0 && this.tracks[0].isSet)) return;
+    const cur = this.current, [t] = this.tracks.splice(from, 1); this.tracks.splice(to, 0, t);
+    this.index = this.tracks.indexOf(cur);
+  }
+  shuffle(rng = Math.random) {
+    const cur = this.current, head = this.tracks.filter(t => t.isSet), rest = this.tracks.filter(t => !t.isSet);
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+    this.tracks = [...head, ...rest]; this.index = Math.max(0, this.tracks.indexOf(cur));
+  }
   get length() { return this.tracks.length; }
   get current() { return this.tracks[this.index]; }
   add(track) { if (this.tracks.some(t => t.src === track.src)) return false; this.tracks.push(track); return true; }
   select(i) { if (i >= 0 && i < this.tracks.length) this.index = i; return this.current; }
-  next() { if (this.tracks.length) this.index = (this.index + 1) % this.tracks.length; return this.current; }
+  next() { if (!this.tracks.length) return null; if (this.index === this.tracks.length - 1 && !this.loop) return null; this.index = (this.index + 1) % this.tracks.length; return this.current; }
   prev() { if (this.tracks.length) this.index = (this.index - 1 + this.tracks.length) % this.tracks.length; return this.current; }
   remove(i) {
     if (i < 0 || i >= this.tracks.length) return;
