@@ -37,8 +37,8 @@ export class Console {
     return [x, r.width, r.height];
   }
   render(state) {
-    const { t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap, track, dur } = state, a = this.getA(), st = a.at(a.S, t), mo = a.at(a.M, t), pk = a.at(a.PK, t), $ = this.$, isLive = !!a.feed;
-    $('stateLine').textContent = `${track ? track + ' — ' : ''}${playing ? 'Lecture' : 'Pause'} à ${tc(t)} sur ${tc(dur)}. ${isLive ? 'Paysage construit en direct à l’écoute.' : ''}${live ? 'Analyse du son en direct.' : 'Analyse précalculée, le son n’est pas accessible à la page : sers-la en HTTP ou charge le fichier avec o.'}`;
+    const { t, sky, wx, playing, live, disp, spec, events, W, H, Q, fpsCap, track, dur, scene } = state, a = this.getA(), st = a.at(a.S, t), mo = a.at(a.M, t), pk = a.at(a.PK, t), $ = this.$, isLive = !!a.feed;
+    $('stateLine').textContent = `${scene ? 'Scène ' + scene + ' — ' : ''}${track ? track + ' — ' : ''}${playing ? 'Lecture' : 'Pause'} à ${tc(t)} sur ${tc(dur)}. ${isLive ? 'Paysage construit en direct à l’écoute.' : ''}${live ? 'Analyse du son en direct.' : 'Analyse précalculée, le son n’est pas accessible à la page : sers-la en HTTP ou charge le fichier avec o.'}`;
     const cyc = sky.u < .5 ? `jour, ${Math.round(sky.u * 200)} %` : `nuit, ${Math.round((sky.u - .5) * 200)} %`;
     const items = [[tc(t), 'position'], [`${fr(st)} LUFS`, 'court terme'], [`${fr(mo)} LUFS`, 'momentané'], [`${fr(pk)} dBFS`, 'crête'],
       [String(this.stats.kicks), 'coups de sub détectés'], [`${Math.round(this.stats.fps)} i/s`, `cadence, plafond ${fpsCap}`], [`${W} × ${H}`, `rendu, qualité ${Math.round(Q * 100)} %`], [`${fr(this.stats.work, 1)} ms`, 'calcul par image'],

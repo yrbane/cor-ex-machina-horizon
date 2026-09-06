@@ -105,3 +105,10 @@ test('la fusée monte et disparaît en haut, les feux d’artifice s’éteignen
   for (let i = 0; i < 10; i++) tickEvents(l2, .5, night, 0, clear, rng, i);
   assert.ok(!l2.includes(f), 'éteint');
 });
+
+test('tickEvents respecte la liste des types admis par la scène', () => {
+  const rng = seeded(8), list = [], allowed = ['bird', 'airliner', 'ufo'];
+  for (let i = 0; i < 4000; i++) tickEvents(list, .5, day, .005, clear, rng, i * .5, allowed);
+  assert.ok(list.length > 0);
+  assert.ok(list.every(e => allowed.includes(e.type)));
+});

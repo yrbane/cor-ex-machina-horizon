@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const ORDER = ['src/util.js', 'src/palette.js', 'src/analysis.js', 'src/sky.js', 'src/weather.js', 'src/events.js', 'src/draw/bodies.js', 'src/draw/landscape.js', 'src/draw/events.js', 'src/draw/weather.js', 'src/draw/water.js', 'src/draw/console.js', 'src/draw/waveform.js', 'src/waveform.js', 'src/draw/clouds.js', 'src/hud.js', 'src/live-analysis.js', 'src/analysis-cache.js', 'src/playlist.js', 'src/playlist-panel.js', 'src/controls.js', 'src/main.js'];
+const ORDER = ['src/util.js', 'src/palette.js', 'src/analysis.js', 'src/sky.js', 'src/weather.js', 'src/events.js', 'src/draw/bodies.js', 'src/draw/landscape.js', 'src/draw/events.js', 'src/draw/weather.js', 'src/draw/water.js', 'src/draw/console.js', 'src/draw/waveform.js', 'src/waveform.js', 'src/draw/clouds.js', 'src/hud.js', 'src/live-analysis.js', 'src/analysis-cache.js', 'src/playlist.js', 'src/playlist-panel.js', 'src/controls.js', 'src/scenes/registry.js', 'src/scenes/biome.js', 'src/scenes/sky.js', 'src/scenes/horizon.js', 'src/scenes/valley.js', 'src/main.js'];
 
 // Les modules sont concaténés dans une seule portée : imports retirés, exports mis à nu, ré-exports supprimés
 const strip = src => src

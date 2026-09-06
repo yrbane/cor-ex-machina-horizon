@@ -103,8 +103,8 @@ export function spawn(type, rng, tn) {
 }
 
 // Fait vivre la liste : apparitions, mouvements propres à chaque type, disparition hors champ
-export function tickEvents(list, dt, sky, wind, weather, rng, tn) {
-  for (const k in TYPES) if (canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn));
+export function tickEvents(list, dt, sky, wind, weather, rng, tn, allowed = null) {
+  for (const k in TYPES) if ((!allowed || allowed.includes(k)) && canSpawn(k, sky, weather, list) && rng() < effectiveRate(k, sky) * dt) list.push(spawn(k, rng, tn));
   for (let i = list.length - 1; i >= 0; i--) {
     const e = list[i], age = tn - e.born;
     if (TRANSIENT.includes(e.type)) { e.life += dt; if (e.life > e.ttl) list.splice(i, 1); continue; }

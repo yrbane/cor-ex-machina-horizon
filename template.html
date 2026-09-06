@@ -111,6 +111,8 @@
   .keys { display: grid; grid-template-columns: max-content 1fr; gap: .45rem 1rem; align-items: baseline; margin: .4rem 0 0; }
   .keys dt { margin: 0; white-space: nowrap; } .keys dd { margin: 0; color: var(--ink-2); font-size: .9rem; }
   #console kbd { display: inline-block; min-width: 1.6em; text-align: center; padding: .05em .45em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: .85em; }
+  #console select, #console input[type=checkbox] { font: inherit; color: var(--ink); background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 8px; padding: .25em .5em; }
+  #console select option { color: #111; }
   .lead { color: var(--ink-2); font-size: .95rem; line-height: 1.5; max-width: 70ch; }
   #console h2 { display: flex; align-items: center; gap: .5rem; }
   #console h2 small { font-weight: 400; color: var(--ink-3); font-size: .8rem; }
@@ -143,7 +145,8 @@
           <dt><kbd>molette</kbd></dt><dd>avance ou recule, dix fois plus vite avec <kbd>Maj</kbd></dd>
           <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>10 s, ou 1 min avec <kbd>Maj</kbd> ; <kbd>Page ↑</kbd> <kbd>Page ↓</kbd> 5 min ; <kbd>Début</kbd> <kbd>Fin</kbd></dd>
           <dt><kbd>espace</kbd></dt><dd>lecture ou pause</dd>
-          <dt><kbd>c</kbd></dt><dd>barre de contrôles : transport, position, volume, VU-mètre</dd>
+          <dt><kbd>c</kbd></dt><dd>barre de contrôles : transport, position, volume, VU-mètre, scène</dd>
+          <dt><kbd>s</kbd></dt><dd>scène suivante : Horizon, Vallée</dd>
           <dt><kbd>p</kbd> <kbd>n</kbd> <kbd>b</kbd></dt><dd>playlist, piste suivante, piste précédente</dd>
           <dt><kbd>o</kbd></dt><dd>ajouter des fichiers audio</dd>
           <dt><kbd>f</kbd> ou double clic</dt><dd>plein écran</dd>
@@ -151,6 +154,9 @@
         </dl>
       </div>
       <div>
+        <h2>Scène</h2>
+        <p class="lead"><label>Scène affichée <select id="sceneSel"></select></label></p>
+        <p class="lead"><label><input type="checkbox" id="autoScene" checked> Changer de scène à chaque nouveau morceau</label> · <kbd>s</kbd> passe à la scène suivante</p>
         <h2>Ce que montre le paysage</h2>
         <p class="lead">Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</p>
         <p class="lead">Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. Le cœur du set bat dans l'astre levé.</p>

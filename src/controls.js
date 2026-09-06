@@ -22,6 +22,9 @@ export class ControlsBar {
         <pt-vumeter id="ctVu" segments="18" orientation="h"></pt-vumeter>
         <span class="ctl-led"><pt-led id="ctLive" color="#3ddc84"></pt-led><small>direct</small></span>
       </div>
+      <div class="ctl-group ctl-scene">
+        <pt-stepper id="ctScene" options="${(api.scenes || ['Horizon']).join(',')}" value="${(api.scenes || ['Horizon'])[0]}" label="Scène"></pt-stepper>
+      </div>
       <div class="ctl-group ctl-panels">
         <pt-button id="ctList" title="Playlist (p)">Playlist</pt-button>
         <pt-button id="ctHelp" title="Aide et statistiques (?)">Aide</pt-button>
@@ -34,8 +37,10 @@ export class ControlsBar {
     this.pos.addEventListener('input', e => { this.dragging = true; this.time.textContent = api.tc(e.detail / 1000 * api.duration()); });
     this.pos.addEventListener('change', e => { this.dragging = false; api.seek(e.detail / 1000 * api.duration()); });
     this.vol.addEventListener('input', e => api.volume(e.detail)); this.vol.addEventListener('change', e => api.volume(e.detail));
+    this.sceneEl = $('ctScene'); this.sceneEl.addEventListener('change', e => api.setScene(e.detail));
     $('ctList').addEventListener('press', () => api.togglePlaylist()); $('ctHelp').addEventListener('press', () => api.toggleConsole()); $('ctFull').addEventListener('press', () => api.fullscreen());
   }
+  setScene(name) { if (this.sceneEl && this.sceneEl.value !== name) this.sceneEl.setAttribute('value', name); }   // pt-stepper expose value en lecture seule, l'attribut pilote
   get hidden() { return this.el.hidden; }
   toggle(show) { this.el.hidden = show === undefined ? !this.el.hidden : !show; if (!this.el.hidden) this.tick(); }
   // Rafraîchit position, VU-mètre, témoin et bouton de lecture ; à appeler à chaque image quand la barre est visible

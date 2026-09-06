@@ -1,5 +1,13 @@
 # Journal des versions
 
+## 1.6.0 — 2026-09-06 · « Vallée »
+
+- Deuxième scène, « Vallée » : même moteur, montagnes plus hautes, fond de vallée à la place de l'eau, végétation au premier plan qui défile avec le plan proche. Aucun passage d'eau, pas de bateau.
+- Biomes qui alternent par segments de quatre minutes, jamais deux fois le même de suite : verdoyant avec ses pins, désertique avec ses cactus et ses rochers, enneigé avec ses sapins, ses crêtes blanches et ses plaques de neige. Transitions douces de vingt secondes, ciel de jour propre à chaque biome.
+- Choix de scène dans la barre de contrôles, dans la console, et avec la touche <kbd>s</kbd>. Changement de scène à chaque nouveau morceau, débrayable dans la console. Préférences retenues.
+- Le moteur est découpé en scènes : ciel commun, horizon, vallée ; le câblage ne connaît plus que le registre.
+- Sept tests de plus, 79 au total.
+
 ## 1.5.1 — 2026-09-06 · « Réglages »
 
 - La barre de contrôles garde sa mise en page quand elle est cachée : les composants potard se mesurent correctement, le potentiomètre de volume s'affiche.
