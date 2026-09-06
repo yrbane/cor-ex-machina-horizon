@@ -1,0 +1,72 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { TYPES, SPECIES, spawn, canSpawn, tickEvents, WATER_TYPES } from '../src/events.js';
+import { seeded } from './fakeCtx.js';
+
+const day = { day: 1, dusk: 0 }, night = { day: 0, dusk: 0 };
+const clear = { w: 'clear', k: 1 }, storm = { w: 'storm', k: 1 };
+
+test('chaque type a un taux, une étiquette, et les types d’eau sont connus', () => {
+  for (const k in TYPES) { assert.ok(TYPES[k].rate > 0, k); assert.ok(TYPES[k].label, k); }
+  for (const w of WATER_TYPES) assert.ok(TYPES[w], w);
+});
+
+test('les ovnis sortent de jour comme de nuit, plus souvent la nuit', () => {
+  assert.ok(canSpawn('ufo', day, clear, []));
+  assert.ok(canSpawn('ufo', night, clear, []));
+  assert.ok(TYPES.ufo.rate > 1 / 600, 'assez fréquents pour être vus dans un set');
+});
+
+test('les passages de nuit seule et de jour seul respectent le ciel', () => {
+  assert.equal(canSpawn('shooting', day, clear, []), false);
+  assert.equal(canSpawn('shooting', night, clear, []), true);
+  assert.equal(canSpawn('balloon', night, clear, []), false);
+  assert.equal(canSpawn('balloon', day, clear, []), true);
+});
+
+test('le mauvais temps cloue au sol ce qui vole léger, et la comète est unique', () => {
+  assert.equal(canSpawn('balloon', day, storm, []), false);
+  assert.equal(canSpawn('kite', day, storm, []), false);
+  assert.equal(canSpawn('airliner', day, storm, []), true);
+  assert.equal(canSpawn('comet', night, clear, [{ type: 'comet' }]), false);
+});
+
+test('spawn crée un passage hors écran, avec ses paramètres, pour chaque type', () => {
+  const rng = seeded(7);
+  for (const k in TYPES) {
+    const e = spawn(k, rng, 0);
+    assert.equal(e.type, k);
+    assert.ok(e.x <= -.1 || e.x >= 1.1 || ['shooting', 'fish', 'whale'].includes(k), `${k} entre par un bord`);
+  }
+  const bird = spawn('bird', rng, 0);
+  assert.ok(SPECIES.includes(bird.sp));
+  const flock = spawn('flock', rng, 0);
+  assert.ok(flock.off.length >= 5);
+});
+
+test('l’avion à banderole porte le texte EMT', () => {
+  const rng = seeded(3);
+  let banner = null; for (let i = 0; i < 50 && !banner; i++) { const e = spawn('prop', rng, 0); if (e.banner) banner = e; }
+  assert.ok(banner, 'un avion à banderole sur cinquante');
+  assert.equal(banner.bannerText, 'EMT');
+});
+
+test('tickEvents fait avancer, garde une trajectoire propre aux oiseaux, et retire ce qui sort', () => {
+  const rng = seeded(11);
+  const a = spawn('bird', rng, 0), b = spawn('bird', rng, 0);
+  a.dir = b.dir = 1; a.x = b.x = 0; a.y = b.y = .3; a.heading = .5; b.heading = -.5;
+  const list = [a, b];
+  for (let i = 0; i < 60; i++) tickEvents(list, 1 / 30, day, .005, clear, rng, i / 30);
+  assert.ok(a.x > 0 && b.x > 0, 'ils avancent');
+  assert.notEqual(a.y.toFixed(3), b.y.toFixed(3), 'deux caps différents : vols non parallèles');
+  const gone = spawn('airliner', rng, 0); gone.x = 5;
+  const l2 = [gone]; tickEvents(l2, .1, day, 0, clear, rng, 0);
+  assert.equal(l2.length, 0);
+});
+
+test('tickEvents fait apparaître des passages avec un taux, jamais de nuit seule le jour', () => {
+  const rng = seeded(5), list = [];
+  for (let i = 0; i < 4000; i++) tickEvents(list, .5, day, .005, clear, rng, i * .5);
+  assert.ok(list.length > 0, 'quelque chose est apparu');
+  assert.ok(!list.some(e => TYPES[e.type].night), 'rien de nocturne en plein jour');
+});

@@ -1,0 +1,12 @@
+{
+  "name": "cor-ex-machina-horizon",
+  "version": "1.0.0",
+  "description": "Paysage en parallaxe piloté par le live « EMT — la machine » : un seul fichier HTML, construit à partir de modules testés.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/",
+    "build": "node build.js",
+    "check": "npm test && npm run build"
+  }
+}

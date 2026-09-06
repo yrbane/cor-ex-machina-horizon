@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="cor-ex-machina-horizon __VERSION__">
+<title>Cor ex machina, horizon</title>
+<style>
+  :root { --ink: #eae7dd; --ink-2: #a9aec0; --ink-3: #6b7188; --line: rgba(255,255,255,.12); --series: #5aa0f0; --sub: #d95926; --bass: #199e70; --mid: #c98500; --high: #d55181; }
+  html, body { height: 100%; margin: 0; background: #06070c; overflow: hidden; }
+  body { cursor: pointer; font-family: "Avenir Next", "Avenir", "Helvetica Neue", "Inter", "Segoe UI", system-ui, sans-serif; color: var(--ink); font-variant-numeric: tabular-nums; }
+  body.hidecursor { cursor: none; }
+  canvas#c { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  input[type=file] { display: none; }
+  #console { position: fixed; inset: 3vh 3vw; z-index: 10; overflow: auto; border-radius: 16px; padding: 1.4rem 1.8rem; cursor: default;
+    background: rgba(10,12,22,.42); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  #console[hidden] { display: none; }
+  #console h1 { font-size: 1.15rem; font-weight: 600; margin: 0 0 .2rem; }
+  #console h1 small { font-weight: 400; color: var(--ink-3); margin-left: .6em; font-size: .8rem; }
+  #console h2 { font-size: .95rem; font-weight: 600; margin: 1.2rem 0 .5rem; color: var(--ink); }
+  #console p, #console li { color: var(--ink-2); font-size: .9rem; line-height: 1.45; margin: .2rem 0; }
+  #console ul { margin: .2rem 0 0 1.1rem; padding: 0; }
+  #console kbd { font: inherit; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 0 .4em; background: rgba(255,255,255,.06); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem 1.6rem; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem 1rem; }
+  .stat { border-top: 1px solid var(--line); padding-top: .4rem; }
+  .stat b { display: block; font-size: 1.35rem; font-weight: 500; line-height: 1.2; }
+  .stat span { color: var(--ink-2); font-size: .8rem; }
+  .chart { display: block; width: 100%; height: 130px; margin-top: .3rem; }
+  .chart.tall { height: 170px; }
+  .legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .8rem; color: var(--ink-2); margin-top: .3rem; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: .35em; vertical-align: -1px; }
+  #console table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  #console th, #console td { text-align: right; padding: .25rem .4rem; border-bottom: 1px solid var(--line); }
+  #console th:first-child, #console td:first-child { text-align: left; }
+  #console th { color: var(--ink-2); font-weight: 500; }
+  .close { position: absolute; top: .9rem; right: 1.1rem; color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: .2em .8em; background: transparent; font: inherit; cursor: pointer; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<input type="file" id="file" accept="audio/*">
+<audio id="audio" preload="auto" src="__AUDIO__"></audio>
+<aside id="console" hidden>
+  <button class="close" id="closeBtn">Fermer (Échap)</button>
+  <h1>Cor ex machina, horizon <small>version __VERSION__</small></h1>
+  <p id="stateLine"></p>
+  <div class="grid">
+    <section>
+      <h2>Commandes</h2>
+      <ul>
+        <li><kbd>clic</kbd> dans l'eau : lecture ou pause. <kbd>clic</kbd> sur le paysage ou le ciel : saute au temps visé, à l'échelle du plan touché.</li>
+        <li><kbd>molette</kbd> : avance ou recule. Avec <kbd>Maj</kbd>, dix fois plus vite.</li>
+        <li><kbd>←</kbd> <kbd>→</kbd> : 10 s. Avec <kbd>Maj</kbd> : 1 min. <kbd>Page ↑</kbd> <kbd>Page ↓</kbd> : 5 min. <kbd>Début</kbd> <kbd>Fin</kbd>.</li>
+        <li><kbd>espace</kbd> : lecture ou pause. <kbd>f</kbd> ou double clic : plein écran. <kbd>o</kbd> : charger un autre fichier audio. <kbd>?</kbd> : cette console.</li>
+      </ul>
+      <h2>Ce que montre le paysage</h2>
+      <ul>
+        <li>Chaque plan est la courbe de loudness du set, centrée sur l'instant présent : 30 min par écran au fond, puis 10 min, 3 min, et 45 s au premier plan. Le lointain défile lentement, le proche file. Dans le silence, les plans s'effacent.</li>
+        <li>Le soleil et la lune se relaient toutes les 7 min 30, jamais ensemble, avec des trajectoires, des tailles, des teintes et des phases différentes à chaque cycle. La lune montre ses mers et ses cratères, le soleil ses taches et sa couronne au crépuscule. Le cœur du set bat dans l'astre levé.</li>
+        <li>La météo change par segments de 3 minutes : ciel clair, nuageux, pluie, orage avec foudre sur les coups de sub, brouillard, neige, aurore la nuit, arc-en-ciel après la pluie de jour.</li>
+        <li>Passent au hasard : quatre espèces d'oiseaux aux routes propres, des vols en V vivants, avions de ligne, avions à hélice dont certains tirent une banderole « EMT », hélicoptères, montgolfières, zeppelins, parapentes, satellites, ovnis de jour comme de nuit, ballons, cerfs-volants, papillons, chauves-souris, graines au vent, voiliers, cargos, poissons et baleines.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>En direct</h2>
+      <div class="stats" id="stats"></div>
+      <h2>Spectre en direct</h2>
+      <canvas class="chart" id="chSpec"></canvas>
+      <h2>Bandes sur la dernière minute</h2>
+      <canvas class="chart" id="chBands"></canvas>
+      <div class="legend"><span><i style="background:var(--sub)"></i>sub</span><span><i style="background:var(--bass)"></i>basses</span><span><i style="background:var(--mid)"></i>médiums</span><span><i style="background:var(--high)"></i>aigus</span></div>
+    </section>
+    <section>
+      <h2>Loudness court terme sur tout le set, météo et cycle du ciel</h2>
+      <canvas class="chart tall" id="chSet"></canvas>
+      <div class="legend"><span><i style="background:#8a8f9c"></i>clair</span><span><i style="background:#5c6270"></i>nuageux</span><span><i style="background:#3d6fb0"></i>pluie</span><span><i style="background:#6a3fb5"></i>orage</span><span><i style="background:#b9bcc9"></i>brouillard</span><span><i style="background:#dbe6ff"></i>neige</span><span><i style="background:#1fbf8a"></i>aurore</span></div>
+      <h2>Répartition de la loudness</h2>
+      <canvas class="chart" id="chHist"></canvas>
+      <h2>Cadence d'affichage sur deux minutes</h2>
+      <canvas class="chart" id="chFps"></canvas>
+    </section>
+    <section>
+      <h2>Passages depuis l'ouverture de la page</h2>
+      <canvas class="chart tall" id="chEvents" style="height:300px"></canvas>
+      <h2>Par tranche de dix minutes</h2>
+      <table id="segments"></table>
+    </section>
+  </div>
+</aside>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+__SCRIPT__
+</script>
+</body>
+</html>
