@@ -4,6 +4,10 @@ Paysage en parallaxe piloté par le live improvisé « EMT — la machine » du 
 
 Chaque plan du paysage est la courbe de loudness du set à une échelle de temps différente, centrée sur l'instant présent : le lointain défile lentement, le premier plan file. Autour : un cycle jour et nuit avec un soleil et une lune qui changent à chaque cycle, une météo par segments de trois minutes, et une vingtaine de passages tirés au hasard, des oiseaux aux baleines en passant par l'avion qui tire une banderole « EMT ».
 
+## Démo
+
+La page est servie sur **https://yrbane.github.io/cor-ex-machina-horizon/** : sans le MP3 du set à côté, le premier clic ouvre la playlist, où l'on peut glisser ses propres morceaux. Le paysage se construit alors en direct à l'écoute.
+
 ## Utilisation
 
 Dans le dossier qui contient la page et le MP3 :
