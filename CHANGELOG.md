@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 1.1.2 — 2026-09-06 · « Onde large »
+
+- La forme d'onde prend toute la largeur de l'écran, avec un trait plus épais, un dégradé horizontal dans la palette du moment et une lueur douce.
+
 ## 1.1.1 — 2026-09-06 · « Onde de repli »
 
 - Sans son accessible, la forme d'onde du premier plan est un signal synthétique modulé par les crêtes précalculées, qui défile en temps réel, au lieu d'une enveloppe plate.

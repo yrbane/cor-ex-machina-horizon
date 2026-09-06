@@ -169,7 +169,7 @@ function frame() {
   if (wx.w === 'snow') drawSnow(ctx, t, wx.k, W, H);
   drawWater(ctx, back, bctx, cv, { W, H, horizon, wTop, tn, sky, wx, lvl, bass: disp.bass, hs, hb, src, srcVis, reduced: REDUCED });
   for (const e of events) if (WATER_TYPES.includes(e.type)) drawEvent(ctx, e, scene, sky);
-  if (started) waveStrip.render(ctx, { x: W * .2, y: wTop + H * .012, w: W * .6, h: H * .05 }, t, hue);
+  if (started) waveStrip.render(ctx, { x: 0, y: wTop + H * .012, w: W, h: H * .06 }, t, hue);
   // Flashs, foudre, vignettage, indication de démarrage
   if (jumpFlash > .02) { ctx.fillStyle = `rgba(234,231,221,${jumpFlash * .1})`; ctx.fillRect(0, 0, W, H); }
   lightning.draw(ctx, tn, W, H);

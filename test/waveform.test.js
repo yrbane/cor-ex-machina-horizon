@@ -45,7 +45,9 @@ test('EnvelopeWaveSource : signal signé modulé par les crêtes, qui défile av
 test('drawWaveform trace une ligne pour un signal, une enveloppe miroir pour une enveloppe, rien pour le silence', () => {
   const box = { x: 100, y: 400, w: 300, h: 30 };
   const c1 = fakeCtx(); drawWaveform(c1, new Float32Array([0, .5, -.5, .2, -.1, 0]), box, { mode: 'signal', hue: 0 });
-  assert.ok(c1.count('lineTo') >= 5 && c1.count('stroke') >= 1, 'polyligne tracée');
+  assert.ok(c1.count('lineTo') >= 5 && c1.count('stroke') >= 2, 'polyligne tracée, avec sa lueur');
+  assert.ok(c1.count('createLinearGradient') >= 1, 'trait en dégradé horizontal');
+  assert.ok(Math.max(...c1.setValues('lineWidth')) >= 2.5, 'trait épais');
   const c2 = fakeCtx(); drawWaveform(c2, new Float32Array([.1, .5, .8, .5, .1]), box, { mode: 'envelope', hue: 0 });
   assert.ok(c2.count('fill') >= 1, 'enveloppe remplie');
   assert.ok(c2.count('lineTo') >= 9, 'aller au-dessus, retour en dessous');
