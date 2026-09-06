@@ -1,6 +1,6 @@
 {
   "name": "cor-ex-machina-horizon",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Paysage en parallaxe piloté par le live « EMT — la machine » : un seul fichier HTML, construit à partir de modules testés.",
   "type": "module",
   "private": true,

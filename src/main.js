@@ -125,7 +125,7 @@ function frame() {
   g.addColorStop(0, `hsl(${lerp(hb, 215, sky.day)},${lerp(40, 55, sky.day)}%,${lerp(4 + lvl * 3, 52, sky.day)}%)`);
   g.addColorStop(.7, `hsl(${lerp(hs, 208, sky.day)},${lerp(45, 50, sky.day)}%,${lerp(9 + lvl * 6, 66, sky.day)}%)`);
   g.addColorStop(1, `hsl(${lerp(hs, 200, sky.day)},${lerp(60, 45, sky.day)}%,${lerp(16 + lvl * 10 + kickFlash * 20, 78, sky.day)}%)`);
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, horizon);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, wTop); // jusqu'au bord de l'eau : la bande du rivage garde la couleur du ciel quand les plans sont muets
   if (sky.dusk > .02) { const d = ctx.createLinearGradient(0, horizon * .45, 0, horizon); d.addColorStop(0, hsl(hue, 'sub', 85, 50, 0)); d.addColorStop(1, hsl(hue, 'sub', 85, 50, sky.dusk * .55)); ctx.fillStyle = d; ctx.fillRect(0, 0, W, horizon); }
   if (wx.dark > 0) { ctx.fillStyle = `rgba(8,10,18,${wx.dark * .5})`; ctx.fillRect(0, 0, W, horizon); }
   const starA = (1 - sky.day) * (1 - wx.dark), starShift = (t / 3600) % 1;

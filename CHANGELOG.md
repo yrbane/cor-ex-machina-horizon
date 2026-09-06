@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 1.0.1 — 2026-09-06 · « Rivage »
+
+- Le ciel est peint jusqu'au bord de l'eau : plus de bande sombre entre l'horizon et l'eau quand les plans sont silencieux, au démarrage du set.
+
 ## 1.0.0 — 2026-09-06 · « Cor ex machina, horizon »
 
 Première version versionnée, refonte en modules testés du visuel unique.
